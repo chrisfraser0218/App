@@ -7,3 +7,8 @@ target/
 .idea/
 .vscode/
 *.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+ai-service/artifacts/*.joblib

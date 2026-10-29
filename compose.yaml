@@ -14,5 +14,45 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+  ai-service:
+    profiles: [ai, app]
+    build: ./ai-service
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+  backend:
+    profiles: [app]
+    build: ./backend
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AI_SERVICE_URL: http://ai-service:8000
+      AI_CONNECT_TIMEOUT_MS: ${AI_CONNECT_TIMEOUT_MS:-500}
+      AI_READ_TIMEOUT_MS: ${AI_READ_TIMEOUT_MS:-1500}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    profiles: [app]
+    build: ./frontend
+    ports:
+      - "127.0.0.1:5173:8080"
+    depends_on:
+      - backend
 volumes:
   postgres_data:

@@ -10,10 +10,10 @@ public final class ApiModels {
         @NotNull @DecimalMin("0.01") @Digits(integer = 12, fraction = 2) BigDecimal amount,
         @NotNull TransactionType type,
         @NotNull UUID categoryId,
-        @NotNull @PastOrPresent LocalDate date) {}
+        @NotNull @PastOrPresent LocalDate date, UUID predictionId) {}
     public record BalanceInput(@NotNull @Digits(integer = 12, fraction = 2) BigDecimal startingBalance) {}
     public record TransactionView(UUID id, String description, BigDecimal amount, TransactionType type,
-                                  UUID categoryId, LocalDate date) {}
+                                  UUID categoryId, LocalDate date, UUID recurringRuleId, LocalDate occurrenceDate) {}
     public record CategoryView(UUID id, String name, TransactionType type) {}
     public record AccountView(UUID id, String name, String currency, BigDecimal startingBalance,
                               BigDecimal income, BigDecimal expenses, BigDecimal balance) {}

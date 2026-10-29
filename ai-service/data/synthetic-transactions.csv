@@ -1,0 +1,226 @@
+description,category,split
+Starbucks coffee,Food & Drinks,train
+Starbucks latte breakfast,Food & Drinks,train
+Starbucks cafe espresso,Food & Drinks,train
+Dunkin coffee donuts,Food & Drinks,train
+Dunkin breakfast sandwich,Food & Drinks,train
+Coffee shop cappuccino,Food & Drinks,train
+Local cafe lunch,Food & Drinks,train
+Restaurant dinner bill,Food & Drinks,train
+Pizza restaurant takeout,Food & Drinks,train
+Chipotle burrito lunch,Food & Drinks,train
+McDonalds burger meal,Food & Drinks,train
+Subway sandwich lunch,Food & Drinks,train
+Sushi restaurant dinner,Food & Drinks,train
+Bakery pastry coffee,Food & Drinks,train
+Thai restaurant takeaway,Food & Drinks,train
+Taco restaurant dinner,Food & Drinks,train
+Burger restaurant lunch,Food & Drinks,train
+Cafe tea sandwich,Food & Drinks,train
+Pizzeria pizza delivery,Food & Drinks,train
+Bistro restaurant brunch,Food & Drinks,train
+Starbucks Coffee breakfast order,Food & Drinks,test
+Dunkin coffee morning,Food & Drinks,test
+Restaurant pizza dinner,Food & Drinks,test
+Local cafe tea lunch,Food & Drinks,test
+Sushi takeaway restaurant,Food & Drinks,test
+Shell gas station,Transportation,train
+Shell fuel gasoline,Transportation,train
+Shell petrol fill up,Transportation,train
+Exxon gas station,Transportation,train
+Chevron fuel gasoline,Transportation,train
+BP gas station fuel,Transportation,train
+Metro transit pass,Transportation,train
+Subway transit ticket,Transportation,train
+Bus transit fare,Transportation,train
+Uber ride trip,Transportation,train
+Lyft ride fare,Transportation,train
+Taxi cab ride,Transportation,train
+Airport parking garage,Transportation,train
+Train rail ticket,Transportation,train
+Vehicle fuel pump,Transportation,train
+Car parking meter,Transportation,train
+Toll highway road,Transportation,train
+Auto vehicle registration,Transportation,train
+Gasoline station pump,Transportation,train
+Public transport bus pass,Transportation,train
+Shell Gas Station gasoline,Transportation,test
+Metro transit monthly pass,Transportation,test
+Uber ride airport trip,Transportation,test
+Car parking garage fee,Transportation,test
+Exxon station fuel pump,Transportation,test
+Walmart groceries,Groceries,train
+Walmart grocery produce,Groceries,train
+Walmart supermarket vegetables,Groceries,train
+Whole Foods groceries,Groceries,train
+Whole Foods market produce,Groceries,train
+Trader Joes grocery shopping,Groceries,train
+Kroger supermarket groceries,Groceries,train
+Aldi grocery bread milk,Groceries,train
+Safeway supermarket food,Groceries,train
+Costco grocery produce,Groceries,train
+Publix grocery vegetables,Groceries,train
+Supermarket fruit vegetables,Groceries,train
+Grocery store weekly essentials,Groceries,train
+Farmers market produce,Groceries,train
+Grocery bread eggs milk,Groceries,train
+Lidl supermarket groceries,Groceries,train
+Market fresh fruit produce,Groceries,train
+Tesco grocery shopping,Groceries,train
+Local grocery store,Groceries,train
+Supermarket pantry supplies,Groceries,train
+Walmart Groceries weekly shop,Groceries,test
+Whole Foods supermarket groceries,Groceries,test
+Aldi milk bread groceries,Groceries,test
+Fresh fruit grocery market,Groceries,test
+Costco grocery essentials,Groceries,test
+Amazon online shopping,Shopping,train
+Amazon household order,Shopping,train
+Amazon electronics purchase,Shopping,train
+Target clothing purchase,Shopping,train
+Target household shopping,Shopping,train
+Ikea furniture shopping,Shopping,train
+Apple electronics store,Shopping,train
+Best Buy electronics,Shopping,train
+Nike shoes clothing,Shopping,train
+Clothing store jacket,Shopping,train
+Bookstore books purchase,Shopping,train
+Etsy handmade gifts,Shopping,train
+Home Depot hardware tools,Shopping,train
+Zara clothing shopping,Shopping,train
+Online retail order,Shopping,train
+Furniture store desk,Shopping,train
+Mall retail shopping,Shopping,train
+Department store clothes,Shopping,train
+Hardware store supplies,Shopping,train
+Shoe store sneakers,Shopping,train
+Amazon shopping delivery,Shopping,test
+Target retail clothing,Shopping,test
+Nike sneakers purchase,Shopping,test
+Ikea desk furniture,Shopping,test
+Best Buy laptop electronics,Shopping,test
+Netflix subscription,Entertainment,train
+Netflix streaming movies,Entertainment,train
+Netflix monthly entertainment,Entertainment,train
+Spotify music subscription,Entertainment,train
+Disney streaming subscription,Entertainment,train
+Hulu streaming movies,Entertainment,train
+Cinema movie tickets,Entertainment,train
+Theater movie tickets,Entertainment,train
+Concert music tickets,Entertainment,train
+Steam video game,Entertainment,train
+PlayStation gaming subscription,Entertainment,train
+Xbox game purchase,Entertainment,train
+Museum admission tickets,Entertainment,train
+Bowling leisure night,Entertainment,train
+Arcade gaming tokens,Entertainment,train
+Apple music streaming,Entertainment,train
+Audible audiobook subscription,Entertainment,train
+Zoo admission tickets,Entertainment,train
+Video streaming service,Entertainment,train
+Amusement park tickets,Entertainment,train
+Netflix streaming payment,Entertainment,test
+Spotify monthly music,Entertainment,test
+Cinema evening movie ticket,Entertainment,test
+Steam gaming purchase,Entertainment,test
+Theater tickets admission,Entertainment,test
+Verizon phone bill,Utilities,train
+Verizon wireless plan,Utilities,train
+Verizon mobile service,Utilities,train
+ATT phone wireless bill,Utilities,train
+TMobile cell phone bill,Utilities,train
+Electricity utility bill,Utilities,train
+Electric power utility,Utilities,train
+Water utility bill,Utilities,train
+Sewer water utility,Utilities,train
+Natural gas utility bill,Utilities,train
+Internet broadband bill,Utilities,train
+Comcast internet broadband,Utilities,train
+Xfinity cable internet,Utilities,train
+Fiber internet service,Utilities,train
+Utility electric payment,Utilities,train
+Mobile phone plan,Utilities,train
+City water service,Utilities,train
+Home heating utility,Utilities,train
+Waste collection utility,Utilities,train
+Telephone service bill,Utilities,train
+Verizon wireless monthly bill,Utilities,test
+Electric power monthly bill,Utilities,test
+Water and sewer utility,Utilities,test
+Comcast broadband payment,Utilities,test
+Mobile telephone plan bill,Utilities,test
+Apartment rent,Housing,train
+Monthly apartment rent,Housing,train
+Rent landlord payment,Housing,train
+Home mortgage payment,Housing,train
+Mortgage loan payment,Housing,train
+Condo association dues,Housing,train
+Housing property tax,Housing,train
+Apartment lease payment,Housing,train
+Rent property management,Housing,train
+Landlord rental housing,Housing,train
+Building maintenance fee,Housing,train
+Home insurance premium,Housing,train
+Renters insurance policy,Housing,train
+Condo housing fee,Housing,train
+Residential rent payment,Housing,train
+Property mortgage installment,Housing,train
+Home lease rent,Housing,train
+Housing association payment,Housing,train
+Apartment maintenance bill,Housing,train
+Property insurance payment,Housing,train
+Apartment monthly rental payment,Housing,test
+Mortgage home installment,Housing,test
+Landlord lease rent fee,Housing,test
+Residential property tax,Housing,test
+Home renters insurance,Housing,test
+CVS pharmacy prescription,Health,train
+Walgreens pharmacy medicine,Health,train
+Pharmacy prescription refill,Health,train
+Doctor clinic visit,Health,train
+Dental dentist appointment,Health,train
+Hospital medical bill,Health,train
+Health insurance premium,Health,train
+Optometrist eye exam,Health,train
+Medical clinic copay,Health,train
+Physiotherapy treatment appointment,Health,train
+Gym fitness membership,Health,train
+Fitness class yoga,Health,train
+Prescription medication refill,Health,train
+Dental cleaning treatment,Health,train
+Urgent care medical,Health,train
+Hospital doctor consultation,Health,train
+Pharmacy medicine vitamins,Health,train
+Therapy counseling session,Health,train
+Health laboratory test,Health,train
+Dentist dental supplies,Health,train
+CVS medicine prescription,Health,test
+Dental clinic treatment,Health,test
+Doctor medical appointment copay,Health,test
+Gym yoga fitness class,Health,test
+Hospital laboratory medical test,Health,test
+Charity donation,Other,train
+Charity community donation,Other,train
+Animal shelter donation,Other,train
+Red Cross donation,Other,train
+Birthday gift cash,Other,train
+Wedding gift contribution,Other,train
+School tuition fee,Other,train
+University tuition payment,Other,train
+Education course enrollment,Other,train
+Postage stamps mailing,Other,train
+Postal shipping fee,Other,train
+Bank service fee,Other,train
+Bank account maintenance,Other,train
+Government document fee,Other,train
+Passport application fee,Other,train
+Library overdue fine,Other,train
+School textbook tuition,Other,train
+Community fundraiser contribution,Other,train
+Postal parcel shipping,Other,train
+Professional license fee,Other,train
+Community charity fundraiser donation,Other,test
+University education tuition,Other,test
+Passport government application,Other,test
+Postal stamps shipping,Other,test
+Bank monthly service fee,Other,test

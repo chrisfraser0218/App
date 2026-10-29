@@ -24,7 +24,7 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: finsight_test
+          POSTGRES_DB: finsight_verification
           POSTGRES_USER: finsight_test
           POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
         ports:
@@ -45,9 +45,22 @@ jobs:
       - run: mvn --batch-mode verify
       - name: Verify against PostgreSQL
         env:
-          PG_TEST_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
-        run: >-
-          mvn --batch-mode test
-          -Dspring.datasource.url=jdbc:postgresql://localhost:5432/finsight_test
-          -Dspring.datasource.username=finsight_test
-          -Dspring.datasource.password="$PG_TEST_PASSWORD"
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/finsight_verification
+          SPRING_DATASOURCE_USERNAME: finsight_test
+          SPRING_DATASOURCE_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ephemeral
+        run: mvn --batch-mode test
+  ai-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ai-service/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: python train.py
+      - run: python -m pytest -q

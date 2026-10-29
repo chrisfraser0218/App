@@ -9,6 +9,7 @@ import {
 } from "./api";
 import { localDate, money, validMoney } from "./finance";
 
+import RecurringTransactions from "./components/RecurringTransactions";
 import Icon from "./components/Icon";
 import Modal from "./components/Modal";
 import TransactionForm from "./components/TransactionForm";
@@ -18,7 +19,11 @@ import DashboardCharts from "./components/DashboardCharts";
 
 export default function App() {
   const [page, setPage] = useState(
-    location.hash === "#transactions" ? "transactions" : "dashboard",
+    location.hash === "#recurring"
+      ? "recurring"
+      : location.hash === "#transactions"
+        ? "transactions"
+        : "dashboard",
   );
   const [dark, setDark] = useState(
     () => localStorage.getItem("finsight-theme") === "dark",
@@ -49,13 +54,19 @@ export default function App() {
   }, [dark]);
   useEffect(() => {
     const handle = () =>
-      setPage(location.hash === "#transactions" ? "transactions" : "dashboard");
+      setPage(
+        location.hash === "#recurring"
+          ? "recurring"
+          : location.hash === "#transactions"
+            ? "transactions"
+            : "dashboard",
+      );
     window.addEventListener("hashchange", handle);
     return () => window.removeEventListener("hashchange", handle);
   }, []);
-  async function load() {
+  async function load(background = false) {
     const current = ++generation.current;
-    setLoading(true);
+    if (!background) setLoading(true);
     setError("");
     try {
       const [account, categories, transactions, summary] = await Promise.all([
@@ -84,6 +95,28 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [notice]);
+  useEffect(() => {
+    const refresh = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        await request("/recurring-transactions/process-due", {
+          method: "POST",
+        });
+      } catch {
+        /* Manual entry remains usable during a scheduling outage. */
+      }
+      await load(true);
+    };
+    void refresh();
+    const timer = setInterval(() => {
+      void refresh();
+    }, 30000);
+    window.addEventListener("online", refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("online", refresh);
+    };
+  }, [month]);
   function close() {
     if (!busy) {
       setModal(null);
@@ -190,6 +223,14 @@ export default function App() {
             <Icon name="list" />
             Transactions
           </a>
+          <a
+            href="#recurring"
+            className={page === "recurring" ? "active" : ""}
+            aria-current={page === "recurring" ? "page" : undefined}
+          >
+            <Icon name="repeat" />
+            Recurring Transactions
+          </a>
         </nav>
         <div className="sidebar-bottom">
           <div className="demo-note">
@@ -216,7 +257,11 @@ export default function App() {
           <div className="breadcrumb">
             Workspace <span>/</span>{" "}
             <strong>
-              {page === "dashboard" ? "Overview" : "Transactions"}
+              {page === "dashboard"
+                ? "Overview"
+                : page === "recurring"
+                  ? "Recurring Transactions"
+                  : "Transactions"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -239,12 +284,18 @@ export default function App() {
             <div>
               <div className="eyebrow">YOUR MONEY, AT A GLANCE</div>
               <h1>
-                {page === "dashboard" ? "Financial overview" : "Transactions"}
+                {page === "dashboard"
+                  ? "Financial overview"
+                  : page === "recurring"
+                    ? "Recurring Transactions"
+                    : "Transactions"}
               </h1>
               <p>
                 {page === "dashboard"
                   ? "A clear picture of where you are. A better sense of what’s next."
-                  : "Every little detail, all in one place."}
+                  : page === "recurring"
+                    ? "Rent, subscriptions, insurance, and paychecks — handled locally."
+                    : "Every little detail, all in one place."}
               </p>
             </div>
             <button
@@ -263,20 +314,22 @@ export default function App() {
                 ? "Your everyday account"
                 : "Your financial activity"}
             </span>
-            <label className="month-control">
-              <span className="sr-only">Selected month</span>
-              <input
-                type="month"
-                required
-                min="1900-01"
-                max="9999-12"
-                value={month}
-                onChange={(e) => {
-                  if (/^\d{4}-\d{2}$/.test(e.target.value))
-                    setMonth(e.target.value);
-                }}
-              />
-            </label>
+            {page !== "recurring" && (
+              <label className="month-control">
+                <span className="sr-only">Selected month</span>
+                <input
+                  type="month"
+                  required
+                  min="1900-01"
+                  max="9999-12"
+                  value={month}
+                  onChange={(e) => {
+                    if (/^\d{4}-\d{2}$/.test(e.target.value))
+                      setMonth(e.target.value);
+                  }}
+                />
+              </label>
+            )}
           </div>
           {notice && (
             <div className="notice" role="status">
@@ -322,67 +375,76 @@ export default function App() {
                     />
                   </>
                 )}
-                <section className="panel transactions-panel">
-                  <div className="panel-heading">
-                    <div>
-                      <h2>
-                        {page === "dashboard"
-                          ? "Recent transactions"
-                          : "Transaction history"}
-                      </h2>
-                      <p>
-                        {page === "dashboard"
-                          ? "The latest movements in your account"
-                          : `${filtered.length} transactions in ${displayMonth}`}
-                      </p>
-                    </div>
-                    {page === "dashboard" && (
-                      <a className="text-button" href="#transactions">
-                        View all <Icon name="arrow" size={15} />
-                      </a>
-                    )}
-                  </div>
-                  {page === "transactions" && (
-                    <div className="filters">
-                      <label className="search">
-                        <span className="sr-only">Search transactions</span>
-                        <input
-                          placeholder="Search description or category…"
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        <span className="sr-only">Transaction type</span>
-                        <select
-                          value={filter}
-                          onChange={(e) => setFilter(e.target.value)}
-                        >
-                          <option value="ALL">All transactions</option>
-                          <option value="INCOME">Income</option>
-                          <option value="EXPENSE">Expenses</option>
-                        </select>
-                      </label>
-                    </div>
-                  )}
-                  <TransactionTable
-                    rows={
-                      page === "dashboard"
-                        ? monthTransactions.slice(0, 5)
-                        : filtered
-                    }
-                    categories={categories}
-                    onEdit={openTransaction}
-                    onDelete={(transaction) => {
-                      setSelected(transaction);
-                      setModal("delete");
-                    }}
+                {page === "recurring" && (
+                  <RecurringTransactions
+                    categories={data.categories}
+                    transactions={data.transactions}
+                    onChanged={() => load(true)}
                   />
-                </section>
+                )}
+                {page !== "recurring" && (
+                  <section className="panel transactions-panel">
+                    <div className="panel-heading">
+                      <div>
+                        <h2>
+                          {page === "dashboard"
+                            ? "Recent transactions"
+                            : "Transaction history"}
+                        </h2>
+                        <p>
+                          {page === "dashboard"
+                            ? "The latest movements in your account"
+                            : `${filtered.length} transactions in ${displayMonth}`}
+                        </p>
+                      </div>
+                      {page === "dashboard" && (
+                        <a className="text-button" href="#transactions">
+                          View all <Icon name="arrow" size={15} />
+                        </a>
+                      )}
+                    </div>
+                    {page === "transactions" && (
+                      <div className="filters">
+                        <label className="search">
+                          <span className="sr-only">Search transactions</span>
+                          <input
+                            placeholder="Search description or category…"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                          />
+                        </label>
+                        <label>
+                          <span className="sr-only">Transaction type</span>
+                          <select
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                          >
+                            <option value="ALL">All transactions</option>
+                            <option value="INCOME">Income</option>
+                            <option value="EXPENSE">Expenses</option>
+                          </select>
+                        </label>
+                      </div>
+                    )}
+                    <TransactionTable
+                      rows={
+                        page === "dashboard"
+                          ? monthTransactions.slice(0, 5)
+                          : filtered
+                      }
+                      categories={categories}
+                      onEdit={openTransaction}
+                      onDelete={(transaction) => {
+                        setSelected(transaction);
+                        setModal("delete");
+                      }}
+                    />
+                  </section>
+                )}
                 <div className="bottom-note">
                   <span className="status-dot" />
                   Your data stays in your local PostgreSQL database.
-                  <span>FinSight AI · Phase 1 demo</span>
+                  <span>FinSight AI · Phase 2B</span>
                 </div>
               </>
             )

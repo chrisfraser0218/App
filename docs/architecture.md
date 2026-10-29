@@ -1,5 +1,7 @@
 # Architecture and decisions
 
+Permanent direction: private, single-user, fully local and offline operation on the owner's MacBook, with $0 monthly operating cost. Preserve the existing stack; do not introduce cloud services, external AI, remote databases, or paid runtime dependencies. See [AGENTS.md](../AGENTS.md) and the [local operation and desktop plan](local-operation.md). Desktop packaging and backup/restore are future phases, not implemented capabilities.
+
 ```mermaid
 flowchart LR
   Browser[React + TypeScript] -->|same-origin /api via Vite| API[Spring Boot REST API]
@@ -28,10 +30,12 @@ Balance is calculated from the ledger on read: opening balance + income − expe
 
 `DemoIdentity` supplies a fixed user and account on the server. Clients cannot choose an owner or account through input. Every read/write is scoped to that identity. Database constraints enforce consistent ownership; service tests verify foreign data remains inaccessible. This is data-scoping scaffolding, **not authentication**: anyone who can reach this local API can act as the demo user.
 
-Spring binds to 127.0.0.1. Compose publishes PostgreSQL only on 127.0.0.1. The security filter rejects unexpected hostnames and browser origins; cross-origin access is disabled. Mutations require JSON, and the application uses no session/cookie authentication, so CSRF token processing is disabled for this demo. Revisit CSRF, CORS, sessions/tokens, secret management, request limits, and authorization when real authentication is added. Never expose this configuration publicly.
+Spring binds to 127.0.0.1. Compose publishes PostgreSQL only on 127.0.0.1. The security filter rejects unexpected hostnames and browser origins; cross-origin access is disabled. Mutations require JSON, and the application uses no session/cookie authentication, so CSRF token processing is disabled for this demo. Review CSRF, CORS, local session/token protection, secret management, and request limits for the single-user local threat model. A future desktop bridge must receive an explicit security design; do not loosen origins globally. Never expose this configuration to the LAN or public internet.
 
-Sample data is created atomically only when the fixed demo account does not exist. Restarting leaves user edits and deletions intact. No machine learning, fake predictions, or financial advice is presented.
+Sample data is created atomically only when the fixed demo account does not exist. Restarting leaves user edits and deletions intact. Phase 2A adds a separate, optional model service and unreviewed feedback snapshots; see [AI categorization](ai-categorization.md). No forecasts or financial advice are presented.
 
 ## Extension points
 
-Replace `DemoIdentity` with a trusted principal-derived context and explicit account selection plus ownership checks. Add budgets and goals as owner-scoped tables in subsequent migrations. Extract feature packages as the code grows. Introduce a separate Python/FastAPI service for categorization only after labelled data, privacy boundaries, and failure behavior are designed; do not couple ledger writes to ML availability.
+Keep server-selected account scoping and develop local security appropriate to one MacBook; hosted identity and public multi-user operation are not product goals. Prioritize recurring income/expenses, idempotent recurring posting, local forecasting, an interactive bill calendar, exact financial calculations, and regression tests. Introduce new tables through migrations without resetting existing records. Extract feature packages as the code grows. The Phase 2A Python/FastAPI categorizer is optional; ledger writes remain independent of model availability. Improve data review and real-world evaluation before expanding its use.
+
+Persistent local storage, automatic local backup/restore, and an eventual Tauri-compatible service lifecycle are described in the [future work plan](local-operation.md). The authoritative native cluster is now in Application Support and the former `/tmp` directory is retained and stopped; see the [verified migration report](database-migration.md). Preserve both and never use restored personal databases as test fixtures. No desktop packaging is permitted during Phases 2B–2D.

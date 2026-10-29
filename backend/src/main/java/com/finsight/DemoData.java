@@ -15,7 +15,7 @@ class DemoData implements ApplicationRunner {
         if (jdbc.queryForObject("SELECT COUNT(*) FROM accounts WHERE id = ?", Integer.class, DemoIdentity.ACCOUNT_ID) > 0) return;
         jdbc.update("INSERT INTO users (id,email,display_name) VALUES (?,?,?)", DemoIdentity.USER_ID, "demo@finsight.local", "Alex Morgan (Demo)");
         jdbc.update("INSERT INTO accounts (id,user_id,name,currency,starting_balance) VALUES (?,?,?,?,?)", DemoIdentity.ACCOUNT_ID, DemoIdentity.USER_ID, "Everyday account", "USD", new BigDecimal("2500.00"));
-        String[] names = {"Salary", "Freelance", "Housing", "Groceries", "Dining", "Transport", "Shopping", "Subscriptions", "Health", "Other"};
+        String[] names = {"Salary", "Freelance", "Housing", "Groceries", "Dining", "Transport", "Shopping", "Subscriptions", "Health", "Other", "Utilities"};
         List<UUID> ids = new ArrayList<>();
         for (int i = 0; i < names.length; i++) {
             UUID id = UUID.randomUUID(); ids.add(id);

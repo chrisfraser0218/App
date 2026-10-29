@@ -6,6 +6,17 @@ export interface Transaction {
   type: TransactionType;
   categoryId: string;
   date: string;
+  recurringRuleId?: string | null;
+  occurrenceDate?: string | null;
+}
+export interface CategoryPrediction {
+  predictionId: string | null;
+  category: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  confidence: number | null;
+  modelVersion: string | null;
+  status: "suggested" | "uncertain" | "unknown" | "unavailable";
 }
 export interface TransactionInput {
   description: string;
@@ -13,6 +24,7 @@ export interface TransactionInput {
   type: TransactionType;
   categoryId: string;
   date: string;
+  predictionId?: string;
 }
 export interface Category {
   id: string;
@@ -56,4 +68,54 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (response.status === 204) return undefined as T;
   return response.json();
+}
+
+export type Frequency =
+  "DAILY" | "WEEKLY" | "BIWEEKLY" | "TWICE_MONTHLY" | "MONTHLY" | "YEARLY";
+export interface RecurringInput {
+  description: string;
+  amount: string;
+  type: TransactionType;
+  categoryId: string;
+  frequency: Frequency;
+  paymentDay: number | null;
+  secondPaymentDay: number | null;
+  startDate: string;
+  endDate: string | null;
+  enabled: boolean;
+  requestId: string;
+  backfillConfirmed: boolean;
+  predictionId?: string;
+}
+export interface RecurringRule extends Omit<
+  RecurringInput,
+  "amount" | "backfillConfirmed"
+> {
+  id: string;
+  amount: number | string;
+  version: number;
+  nextDate: string | null;
+  archived: boolean;
+  status: "ACTIVE" | "PAUSED" | "CANCELED" | "COMPLETED";
+  catchUpPending: boolean;
+}
+export interface Occurrence {
+  date: string;
+  resolution:
+    | "SCHEDULED"
+    | "POSTED"
+    | "MANUAL"
+    | "HANDLED"
+    | "REMOVED"
+    | "PAUSED"
+    | "CANCELED";
+  transactionId: string | null;
+  description: string | null;
+  amount: string | number | null;
+  type: TransactionType | null;
+}
+export interface ProcessResult {
+  posted: number;
+  pendingRules: number;
+  failedRules: number;
 }

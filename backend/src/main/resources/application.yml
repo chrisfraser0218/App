@@ -1,5 +1,5 @@
 server:
-  address: 127.0.0.1
+  address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${PORT:8080}
   error:
     include-message: never
@@ -16,5 +16,22 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
   mvc:
+    log-request-details: false
     problemdetails:
       enabled: true
+ai:
+  base-url: ${AI_SERVICE_URL:http://127.0.0.1:8000}
+  connect-timeout-ms: ${AI_CONNECT_TIMEOUT_MS:500}
+  read-timeout-ms: ${AI_READ_TIMEOUT_MS:1500}
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    org.springframework.jdbc.core: WARN
+    org.hibernate.SQL: "OFF"
+    org.hibernate.orm.jdbc: "OFF"
+recurring:
+  time-zone: ${FINSIGHT_TIME_ZONE:America/New_York}
+  poll-delay-ms: ${RECURRING_POLL_DELAY_MS:30000}
+  processing:
+    enabled: ${RECURRING_PROCESSING_ENABLED:true}

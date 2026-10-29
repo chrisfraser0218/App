@@ -1,21 +1,33 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import type {
   Category,
   Transaction,
   TransactionInput,
   TransactionType,
 } from "../api";
+import CategorySuggestion from "./CategorySuggestion";
+import { useCategoryPrediction } from "../hooks/useCategoryPrediction";
 import { localDate, validMoney } from "../finance";
 export default function TransactionForm({
   categories,
   existing,
   onSave,
   onClose,
+  dateLabel = "Date",
+  allowFutureDate = false,
+  submitLabel,
+  extraFields,
+  validateExtra,
 }: {
   categories: Category[];
   existing?: Transaction;
   onSave: (input: TransactionInput) => Promise<void>;
   onClose: () => void;
+  dateLabel?: string;
+  allowFutureDate?: boolean;
+  submitLabel?: string;
+  extraFields?: (date: string) => ReactNode;
+  validateExtra?: (date: string) => string | undefined;
 }) {
   const [type, setType] = useState<TransactionType>(
     existing?.type ?? "EXPENSE",
@@ -28,10 +40,27 @@ export default function TransactionForm({
   const [date, setDate] = useState(existing?.date ?? localDate());
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const { status, prediction } = useCategoryPrediction(
+    description,
+    amount,
+    type,
+  );
+  const suggestion =
+    prediction?.status === "suggested" &&
+    categories.some(
+      (c) => c.id === prediction.categoryId && c.type === "EXPENSE",
+    )
+      ? prediction
+      : undefined;
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!validMoney(amount)) {
       setError("Enter a positive amount with at most two decimal places.");
+      return;
+    }
+    const extraError = validateExtra?.(date);
+    if (extraError) {
+      setError(extraError);
       return;
     }
     setSaving(true);
@@ -43,6 +72,9 @@ export default function TransactionForm({
         type,
         categoryId,
         date,
+        ...(suggestion?.predictionId
+          ? { predictionId: suggestion.predictionId }
+          : {}),
       });
       onClose();
     } catch (e) {
@@ -93,11 +125,12 @@ export default function TransactionForm({
             />
           </label>
           <label>
-            Date
+            {dateLabel}
             <input
               required
               type="date"
-              max={localDate()}
+              max={allowFutureDate ? "9999-12-31" : localDate()}
+              min={allowFutureDate ? "1900-01-01" : undefined}
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
@@ -119,13 +152,23 @@ export default function TransactionForm({
               ))}
           </select>
         </label>
+        {extraFields?.(date)}
+        <CategorySuggestion
+          status={status}
+          prediction={prediction}
+          onAccept={() => {
+            if (suggestion?.categoryId) setCategory(suggestion.categoryId);
+          }}
+        />
         {error && (
           <p className="error" role="alert">
             {error}
           </p>
         )}
         <button className="primary" disabled={saving || !description.trim()}>
-          {saving ? "Saving…" : existing ? "Save changes" : "Add transaction"}
+          {saving
+            ? "Saving…"
+            : (submitLabel ?? (existing ? "Save changes" : "Add transaction"))}
         </button>
       </fieldset>
     </form>

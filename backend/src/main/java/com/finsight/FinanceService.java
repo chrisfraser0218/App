@@ -12,8 +12,10 @@ class FinanceService {
     private final AccountRepository accounts;
     private final CategoryRepository categories;
     private final TransactionRepository transactions;
-    FinanceService(AccountRepository accounts, CategoryRepository categories, TransactionRepository transactions) {
-        this.accounts = accounts; this.categories = categories; this.transactions = transactions;
+    private final CategoryPredictionService predictions;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    FinanceService(AccountRepository accounts, CategoryRepository categories, TransactionRepository transactions, CategoryPredictionService predictions, org.springframework.jdbc.core.JdbcTemplate jdbc) {
+        this.accounts = accounts; this.categories = categories; this.transactions = transactions; this.predictions = predictions; this.jdbc = jdbc;
     }
     private Account accountEntity() {
         return accounts.findByIdAndUserId(DemoIdentity.ACCOUNT_ID, DemoIdentity.USER_ID)
@@ -26,7 +28,13 @@ class FinanceService {
         return categories.findByUserIdOrderByName(DemoIdentity.USER_ID).stream().map(c -> new CategoryView(c.id, c.name, c.type)).toList();
     }
     TransactionView get(UUID id) { return view(owned(id)); }
-    List<TransactionView> list() { return entries().stream().map(this::view).toList(); }
+    List<TransactionView> list() {
+        Map<UUID, RecurringSource> sources = new HashMap<>();
+        jdbc.query("SELECT transaction_id,rule_id,occurrence_date FROM recurring_occurrences WHERE user_id = ? AND transaction_id IS NOT NULL", row -> {
+            sources.put(row.getObject("transaction_id", UUID.class), new RecurringSource(row.getObject("rule_id", UUID.class), row.getObject("occurrence_date", LocalDate.class)));
+        }, DemoIdentity.USER_ID);
+        return entries().stream().map(t -> view(t, sources.get(t.id))).toList();
+    }
     AccountView account() {
         Account a = accountEntity();
         List<Transaction> all = entries();
@@ -42,11 +50,11 @@ class FinanceService {
         accountEntity();
         Transaction t = new Transaction(); t.id = UUID.randomUUID(); t.userId = DemoIdentity.USER_ID;
         t.accountId = DemoIdentity.ACCOUNT_ID; t.createdAt = Instant.now();
-        apply(t, input); return view(transactions.saveAndFlush(t));
+        apply(t, input); transactions.saveAndFlush(t); predictions.recordFeedback(input.predictionId(), t); return view(t);
     }
     @Transactional
     TransactionView update(UUID id, TransactionInput input) {
-        Transaction t = owned(id); apply(t, input); return view(transactions.saveAndFlush(t));
+        Transaction t = owned(id); apply(t, input); transactions.saveAndFlush(t); predictions.recordFeedback(input.predictionId(), t); return view(t);
     }
     @Transactional
     void delete(UUID id) { transactions.delete(owned(id)); }
@@ -73,5 +81,14 @@ class FinanceService {
     private BigDecimal total(List<Transaction> all, TransactionType type) {
         return all.stream().filter(t -> t.type == type).map(t -> t.amount).reduce(new BigDecimal("0.00"), BigDecimal::add);
     }
-    private TransactionView view(Transaction t) { return new TransactionView(t.id, t.description, t.amount, t.type, t.categoryId, t.transactionDate); }
+    private record RecurringSource(UUID ruleId, LocalDate date) {}
+    private TransactionView view(Transaction t) {
+        var sources = jdbc.query("SELECT rule_id,occurrence_date FROM recurring_occurrences WHERE transaction_id = ? AND user_id = ?",
+            (row, n) -> new RecurringSource(row.getObject("rule_id", UUID.class), row.getObject("occurrence_date", LocalDate.class)), t.id, DemoIdentity.USER_ID);
+        return view(t, sources.isEmpty() ? null : sources.getFirst());
+    }
+    private TransactionView view(Transaction t, RecurringSource source) {
+        return new TransactionView(t.id, t.description, t.amount, t.type, t.categoryId, t.transactionDate,
+            source == null ? null : source.ruleId(), source == null ? null : source.date());
+    }
 }

@@ -1,0 +1,196 @@
+{
+  "model_version": "1.0",
+  "dataset": "SYNTHETIC ONLY: handcrafted merchants and descriptions; no real customer data",
+  "dataset_sha256": "99250862bcedf0d232c9dc4a828bf342be038620af1fb2ee0f071c4328cd4e02",
+  "split": "Explicit disjoint description split. Merchants and vocabulary overlap; not a merchant-held-out benchmark.",
+  "training_rows": 180,
+  "test_rows": 45,
+  "categories": [
+    "Entertainment",
+    "Food & Drinks",
+    "Groceries",
+    "Health",
+    "Housing",
+    "Other",
+    "Shopping",
+    "Transportation",
+    "Utilities"
+  ],
+  "accuracy": 1.0,
+  "suggestion_coverage": 0.9555555555555556,
+  "suggestion_accuracy": 1.0,
+  "min_confidence": 0.45,
+  "min_margin": 0.12,
+  "classification_report": {
+    "Entertainment": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Food & Drinks": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Groceries": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Health": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Housing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Other": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Shopping": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Transportation": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "Utilities": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 5.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 45.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 45.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5
+    ]
+  ],
+  "sklearn_version": "1.9.1",
+  "limitations": "Synthetic evaluation does not establish real-world accuracy. Probabilities are uncalibrated; mixed merchants and unfamiliar descriptions can be confidently wrong. No feedback is used in training."
+}

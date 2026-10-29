@@ -2,11 +2,19 @@
 
 A personal finance workspace built with React, TypeScript, Java 21, Spring Boot, and PostgreSQL. Phase 1 delivers a functional local demo: record income and expenses, set an opening balance, and understand spending through interactive charts.
 
-**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. AI features are planned, not implemented.
+**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; forecasting, a bill calendar, and an AI assistant remain future work.
 
 ![FinSight AI financial dashboard in light mode](docs/screenshots/dashboard-light.png)
 
 [Dark mode](docs/screenshots/dashboard-dark.png) · [Mobile view](docs/screenshots/dashboard-mobile.png)
+
+## Permanent operating requirements
+
+FinSight AI is a private, single-user application running exclusively on the owner's MacBook with **$0 monthly operating cost**. All financial records, service communication, forecasting, and AI must remain local and work offline after initial installation. Cloud hosting, remote databases, external AI services, telemetry, and paid service dependencies are excluded.
+
+[Repository-wide development requirements](AGENTS.md) govern all future work. The [local operation and macOS desktop plan](docs/local-operation.md) evaluates Tauri and records the remaining runtime packaging, service supervision, persistent storage, local security, and backup/restore work. Tauri packaging is deferred until after Phases 2B–2D and the local backup/restore phase. The final Applications app must start its own services and close normally without requiring Terminal, VS Code, or manual Docker/PostgreSQL/Java/Python startup.
+
+Current browser development continues with the existing stack. Existing records must never be reset during updates, even when labelled demo. PostgreSQL has now been **backup/restored and verified** at `~/Library/Application Support/FinSight AI/postgres` on **127.0.0.1:55432**. The original `/tmp/finsight-pgdata` directory is stopped and retained. See the [migration report, backup location, startup, and recovery procedure](docs/database-migration.md). Automatic backup scheduling and desktop packaging remain future work.
 
 ## Features
 
@@ -19,39 +27,64 @@ A personal finance workspace built with React, TypeScript, Java 21, Spring Boot,
 - PostgreSQL persistence, versioned Flyway migration, JPA validation, user-scoped queries, JSON problem responses, and decimal arithmetic.
 - First-run sample data in the current month. Existing records and deletions survive restarts.
 
+## Phase 2A: AI expense categorization
+
+A separate Python/FastAPI service loads a saved TF-IDF + Logistic Regression model. The expense form shows optional suggestions and actual model confidence; it never changes a manually selected category automatically. Java applies timeouts, handles unavailable AI, maps model labels to existing categories, and records accepted/corrected feedback when an expense is saved. Feedback is unreviewed and never triggers automatic retraining.
+
+[AI setup, architecture, API, evaluation, feedback, Docker profiles, and limitations](docs/ai-categorization.md)
+
+Quick start in another terminal, alongside the existing backend/frontend:
+
+```sh
+cd ai-service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+python train.py
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
+```
+
+Java defaults to `http://127.0.0.1:8000`; override with `AI_SERVICE_URL`. Try **Starbucks Coffee / 8.75** in Add transaction and review the suggested Food & Drinks → Dining category. The v1 held-out synthetic evaluation scored **45/45 classifications**, offering **43/45 suggestions** after abstention. Merchants/vocabulary overlap across the split; these numbers establish **no real-world accuracy claim**.
+
+Run Python tests with `cd ai-service && python -m pytest -q` after installing development requirements. The default Docker workflow still starts just PostgreSQL. Use `docker compose --profile ai up -d --build --wait` for PostgreSQL + AI, or `docker compose --profile app up -d --build` for the entire stack. Docker runtime verification remains pending on a machine with Docker available.
+
+## Phase 2B: recurring transactions
+
+**Recurring Transactions** in the sidebar supports income and expenses with daily, weekly, every-two-weeks, twice-monthly, monthly, and yearly schedules. It includes configurable payment days, start/end dates, future-only edits, pause/resume/cancel, upcoming dates, and generated history. AI suggestions remain optional and never override manual categories. Summary amounts stay grouped by cadence.
+
+Due dates post into the existing ledger automatically on backend startup and while running, including catch-up after closure. Permanent schedule/date receipts, row locks, and atomic transactions prevent duplicate postings. Explicit manual-payment linking or handled-only receipts prevent double-counting without guessing that similar transactions are duplicates.
+
+[Phase 2B behavior, API, database changes, verified backup, tests, and limitations](docs/recurring-transactions.md)
+
+The native PostgreSQL setup is unchanged. V3 added three empty recurring tables after a full verified backup; all existing financial records and balances were confirmed unchanged. No schedules or payments were seeded. New pre-V3 backups and retained restore mappings are under `~/Library/Application Support/FinSight AI/backups/phase2b-pre-v3-20261029T192555Z-378583/`.
+
 ## Prerequisites
 
+- Python **3.11** for the optional AI service.
 - Java **21** and Maven **3.9+** (`java -version`, `mvn -version`).
 - Node **22.x, version 22.12 or newer**, and npm.
-- Docker Desktop or Docker Engine with Compose v2, running locally.
+- Homebrew PostgreSQL **15** for the migrated native cluster. Docker/Compose is optional for separate synthetic development.
 
 ## Run locally
 
-From the repository root, create your local configuration:
+For the migrated personal database, use the existing persistent cluster; do not initialize a new database or switch to Docker's port 5432.
 
 ```sh
-cp .env.example .env
+sh scripts/local-postgres.sh status
+sh scripts/local-postgres.sh start
 ```
 
-Edit `.env` and set a local database password. Keep `POSTGRES_PASSWORD` and `DB_PASSWORD` equal, and `POSTGRES_USER` and `DB_USERNAME` equal. `.env` is ignored by Git. No real credentials ship with the application.
-
-Start PostgreSQL:
-
-```sh
-docker compose up -d --wait
-```
-
-In a backend terminal, export the configuration and launch the API:
+In a Java 21/Maven terminal at the repository root:
 
 ```sh
 set -a
-source .env
+source "$HOME/Library/Application Support/FinSight AI/backend.env"
 set +a
 cd backend
 mvn spring-boot:run
 ```
 
-In another terminal:
+The private environment contains the generated local database credentials and selects the preserved database on 55432. Never print, commit, or put those credentials in command arguments. In another terminal:
 
 ```sh
 cd frontend
@@ -59,9 +92,11 @@ npm ci
 npm run dev
 ```
 
-Open **http://localhost:5173**. Vite proxies `/api` to **127.0.0.1:8080**, so there is no cross-origin frontend configuration. The server seeds an everyday USD account with a $2,500 opening balance and sample transactions at first startup. Change the starting balance and create an expense to see the available balance and charts refresh.
+Open **http://127.0.0.1:5173**. Vite proxies `/api` to 127.0.0.1:8080. Start the optional AI service with the Phase 2A instructions above. The current personal database is preserved; it is not a fresh sample-data fixture. Keep all test writes and screenshots in separately initialized synthetic databases.
 
-The default configuration expects the root `.env` to be exported before launching the backend; Spring does not automatically load that file. Example values use plain shell-compatible assignments; quote values containing spaces or shell metacharacters. All data is stored in the Compose named volume. `docker compose down` stops the database without deleting it.
+The [migration and recovery guide](docs/database-migration.md) gives the exact backup directory, verification command, native PostgreSQL procedure, and AI startup instructions. PostgreSQL must be stopped only after the backend and other database clients disconnect. No autostart/desktop launcher is implemented.
+
+Docker remains an optional alternative for **separate synthetic development**: copy `.env.example` to `.env`, configure local test credentials, and run Compose with its loopback ports. Do not use those defaults to replace the migrated personal connection or delete an existing volume. The persisted native cluster was migrated using Homebrew PostgreSQL, not Docker.
 
 ## Verify
 
@@ -76,18 +111,22 @@ cd backend
 mvn verify
 ```
 
-The backend suite starts the full application with MockMvc, Flyway, and H2 in PostgreSQL compatibility mode. It covers CRUD, exact decimal balances, starting balance changes, invalid values, category/type validation, calendar-month summaries, data isolation, and local access restrictions. Tests roll back their changes.
+The backend suite starts the full application with MockMvc, Flyway, and H2 in PostgreSQL compatibility mode. It covers CRUD, exact decimal balances, starting balance changes, invalid values, category/type validation, calendar-month summaries, data isolation, and local access restrictions. Phase 1 tests roll back their changes; prediction integration tests clear their isolated synthetic fixtures.
 
-To run the same suite against an **isolated test PostgreSQL database**, set its URL, username, and password as Java system properties (never use a database containing data you want to keep):
+For Phase 2B PostgreSQL testing, reuse the already-existing isolated cluster under `/tmp/finsight-isolated-verification-12473ab7c796/postgres` on loopback port 55434 with its synthetic `finsight_verification` database. Do not initialize another cluster, use Docker, or repoint tests to the persistent personal cluster. If the existing isolated environment is unavailable, stop and report the limitation rather than bypassing the guard or creating a cluster. The test startup guard permits this dedicated location (or CI's ephemeral PostgreSQL container), and rejects personal clusters **before Flyway, seeding, or fixture deletes**. Neither preserved database named `finsight_test` is a safe test target.
+
+Pass test credentials through the environment, not Java command arguments:
 
 ```sh
-mvn test \
-  -Dspring.datasource.url=jdbc:postgresql://localhost:5432/finsight_test \
-  -Dspring.datasource.username="$PG_TEST_USER" \
-  -Dspring.datasource.password="$PG_TEST_PASSWORD"
+(
+  export SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:55434/finsight_verification
+  export SPRING_DATASOURCE_USERNAME="$PG_TEST_USER"
+  export SPRING_DATASOURCE_PASSWORD="$PG_TEST_PASSWORD"
+  mvn test
+)
 ```
 
-The test suite deletes transactions inside rollback-only test transactions. CI runs both H2 and PostgreSQL 17, plus frontend tests and the production build. CI derives a disposable test-service password from workflow run metadata; it contains no deployed credentials.
+The Phase 1 tests use rollback-only transactions; AI integration tests explicitly clear ledger/prediction tables in the isolated test database. Never point tests at your demo or personal database. CI runs both H2 and PostgreSQL 17, plus frontend tests, the production build, Python tests, and synthetic model training. CI derives a disposable test-service password from workflow run metadata; it contains no deployed credentials.
 
 For a backend artifact, run `mvn package` and then `java -jar target/finsight-api-0.1.0.jar` with database environment variables exported. `npm run build` creates frontend assets in `frontend/dist`. Use `npm run dev` for the documented integrated local demo.
 
@@ -108,6 +147,7 @@ finsight-ai/
 │   │   └── db/migration/    # Flyway SQL
 │   ├── src/test/            # Full-context API tests
 │   └── pom.xml
+├── ai-service/             # FastAPI inference, offline training, synthetic data, pytest
 ├── docs/
 │   ├── architecture.md
 │   └── api.md
@@ -131,11 +171,11 @@ If changing `PORT`, also change the Vite proxy target and allowed local origins.
 
 Phase 1 supports one demo user, one USD account, and predefined categories. Future-dated transactions are rejected. Available balance includes every recorded transaction; month selection changes charts, summary totals, and visible history, not that balance. Starting balance is an opening amount, not a transaction or a dated balance adjustment.
 
-Next: introduce authenticated principals and ownership authorization tests before any public exposure; add pagination and API-driven search; add budgets and savings goals through new migrations; add browser end-to-end tests; then design the separate FastAPI categorization service. Forecasting, unusual-spending detection, and an assistant follow only after the core product and data pipeline are established. AWS deployment is out of scope.
+Next priorities, in order: recurring income and expenses; automatic, idempotent recurring transaction processing; future balance forecasts; an interactive bill calendar; accurate financial calculations; and automated tests. After those browser features, implement automatic local backups and verified restoration, then evaluate desktop packaging. Keep forecasts separate from posted transactions and support safe catch-up after the app has been closed. Cloud/AWS deployment and public exposure are excluded from the permanent architecture. Local application security should fit one MacBook and must not require hosted authentication.
 
-See [architecture](docs/architecture.md) and [API examples](docs/api.md).
+See [architecture](docs/architecture.md), [API examples](docs/api.md), and [database migration/recovery](docs/database-migration.md).
 
-## Implementation verification
+## Phase 1 implementation verification
 
 Verified on October 29, 2026 with Java 21 and Node 22:
 
@@ -146,3 +186,28 @@ Verified on October 29, 2026 with Java 21 and Node 22:
 - Frontend dependency audit: no reported vulnerabilities at verification time.
 
 Docker was unavailable on the implementation machine, so Compose startup was not executed. The real PostgreSQL checks used an isolated local PostgreSQL 15 instance; CI is configured to repeat the suite on PostgreSQL 17. CI itself has not run remotely. Browser smoke tooling was temporary and is not a required project dependency; adding a maintained browser suite is a recommended next step.
+
+## Phase 2A implementation verification
+
+Executed locally on October 29, 2026:
+
+- **30 Java tests passed** on H2 and again on isolated PostgreSQL 15: all 14 unchanged Phase 1 tests, six AI-client tests, and ten prediction/feedback integration tests. Both Flyway migrations and backend packaging passed.
+- **27 Python tests passed**, covering model output/confidence, API contracts, validation, all categories, abstention, startup failures, and train/test vocabulary isolation. The upstream Starlette test client emitted one non-failing deprecation warning about its httpx adapter.
+- **12 frontend tests passed**, including the three Phase 1 tests and nine form/suggestion cases. TypeScript and the production build passed.
+- Real Chromium checks verified Python–Java–React predictions, explicit acceptance, manual corrections, stale results, unknown input, six dashboard/ledger snapshots, update/delete balances, and PostgreSQL feedback (one accepted, two corrected, all unreviewed).
+- With the real AI process stopped, browser expense creation, editing, and deletion still worked; the backend returned `unavailable` within its timeout. The AI process was restarted afterward.
+- Existing demo transactions and opening balance were preserved; verification-only entries and feedback were cleaned up.
+
+Docker builds/startup and remote GitHub Actions were not executed here. Compose provides optional `ai` and `app` profiles; the default PostgreSQL-only workflow remains available.
+
+## Persistent database and Phase 2A verification
+
+The October 29, 2026 protection run completed a verified native PostgreSQL backup/restore cutover. All three databases, all 14 user-table row counts/content fingerprints, sequence states, and exact per-account balances matched the pre-migration snapshot; the normal frontend proxy returned the same account totals. The original directory remains stopped and intact. See the [migration report](docs/database-migration.md) for private backup paths, startup commands, and recovery instructions.
+
+Executed results: **33 backend tests passed on H2 and again on an isolated PostgreSQL 15 cluster**, **12 frontend tests passed**, and **27 AI tests passed**. Backend packaging and optimized frontend builds passed. Browser regression checked 16 dashboard/ledger snapshots plus create/edit/delete, AI suggestions, manual overrides, feedback storage, stale/unknown inputs, mobile behavior, and real AI-outage fallback. All browser/test writes and screenshots used fresh synthetic data, never the preserved databases. The new test-startup guard rejects personal clusters before migrations or seeding. Startup-helper safety checks and the read-only backup verifier also passed.
+
+The repeated synthetic model evaluation remained 45/45 classifications, with 43/45 suggestions after abstention; this is not evidence of real-world accuracy. One upstream Python test-client deprecation warning remains. Docker and remote CI were not executed. Automatic backup schedules/retention, encrypted backup management, durable developer-tool installation, and desktop packaging remain future work; no Phase 2B work was started.
+
+## Phase 2B verification
+
+Executed: **62 backend tests on both H2 and isolated PostgreSQL 15**, **27 frontend tests**, and **27 AI service tests**; backend and frontend production builds passed. Synthetic browser checks verified the new UI, explicit manual reconciliation, AI suggestions/overrides, unchanged legacy flows, mobile/dark mode, draft preservation during background refresh, and startup catch-up across service restarts without duplicates. Personal records were not used as test fixtures. V3 was applied only after a fully restore-verified backup; existing financial table fingerprints, exact balances, and PostgreSQL configuration remained unchanged. See the [Phase 2B report](docs/recurring-transactions.md).

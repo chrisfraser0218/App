@@ -39,7 +39,10 @@ export default function TransactionTable({
                   </span>
                   <div>
                     <strong>{t.description}</strong>
-                    <small>{t.type === "INCOME" ? "Income" : "Expense"}</small>
+                    <small>
+                      {t.type === "INCOME" ? "Income" : "Expense"}
+                      {t.recurringRuleId ? " · Recurring" : ""}
+                    </small>
                   </div>
                 </div>
               </td>

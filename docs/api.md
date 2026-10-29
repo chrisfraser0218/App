@@ -37,3 +37,15 @@ Example transaction request body (replace category UUID and use today's date or 
 ```
 
 POST and PUT use the same body. Monetary request strings preserve exact decimal input. Responses contain JSON decimal numbers; frontend numbers are for display/charting and never used to calculate the authoritative balance. List endpoints are unpaginated for Phase 1.
+
+## Category suggestions (Phase 2A)
+
+`POST /api/category-predictions` accepts `{ "description": "Starbucks Coffee", "amount": "8.75" }`. It returns `predictionId`, canonical `category`, mapped `categoryId`/`categoryName`, actual `confidence`, `modelVersion`, and `status` (`suggested`, `unknown`, `uncertain`, or `unavailable`). An unavailable AI service does not fail transaction entry.
+
+Transaction POST/PUT now accepts optional `predictionId` in addition to the unchanged Phase 1 fields. Java validates the stored prediction's owner, description, amount, and expense type; it records the final category as accepted/corrected in the same database transaction. Omit the ID when no current suggestion exists. Confidence and model metadata cannot be written by the client. See the [AI guide](ai-categorization.md) for contracts, mappings, and feedback semantics.
+
+## Recurring transactions (Phase 2B)
+
+All routes are under `/api/recurring-transactions`: list/get/create, future-only PUT edits, PUT `/{id}/state` for pause/resume, POST `/{id}/stop` for cancellation, POST `/process-due`, GET `/{id}/history`, GET `/{id}/occurrences?from=...&to=...`, and POST `/{id}/reconcile` for explicit manual association or handled-only dates. Create requires a stable UUID requestId; edits/state/cancel require the current version. Existing transaction responses now add nullable recurringRuleId and occurrenceDate provenance. Existing manual transaction inputs and balance calculations are unchanged.
+
+See [full contracts and recurrence semantics](recurring-transactions.md#api).
