@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
 from decimal import Decimal
 import os
+import hmac
 from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from .model import Categorizer
 from .spending import SpendingRequest, SpendingResponse, analyze
@@ -31,9 +33,16 @@ def create_app(model_path: Path | None = None) -> FastAPI:
 
     app = FastAPI(title="FinSight category model", version="1.0", lifespan=lifespan)
 
+    token = os.getenv("FINSIGHT_AI_SESSION_TOKEN", "")
+    @app.middleware("http")
+    async def local_session(request: Request, call_next):
+        if token and not hmac.compare_digest(request.headers.get("X-FinSight-AI", ""), token):
+            return JSONResponse(status_code=403, content={"detail":"Local AI session required"})
+        return await call_next(request)
+
     @app.get("/health")
     def health(request: Request):
-        return {"status": "ready", "model_version": request.app.state.categorizer.version}
+        return {"status": "ready", "model_version": request.app.state.categorizer.version, **({"instance": os.getenv("FINSIGHT_DESKTOP_INSTANCE", "")} if token else {})}
 
     @app.post("/predict-category", response_model=PredictionResponse)
     def predict(payload: PredictionRequest, request: Request):

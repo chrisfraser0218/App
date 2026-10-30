@@ -20,14 +20,16 @@ class SpendingAiClient {
     record Signal(@JsonProperty("transaction_id") UUID transactionId,String method,@JsonProperty("baseline_ids") List<UUID> baselineIds) {}
     record Result(@JsonProperty("method_version") String version,@JsonProperty("min_history") int minHistory,int eligible,int insufficient,List<Signal> alerts,boolean truncated) {}
     private final RestClient client;
+    SpendingAiClient(String url,int connect,int read){this(url,connect,read,"");}
+    @org.springframework.beans.factory.annotation.Autowired
     SpendingAiClient(@Value("${ai.base-url:http://127.0.0.1:8000}")String url,@Value("${ai.connect-timeout-ms:500}")int connect,
-                     @Value("${ai.read-timeout-ms:1500}")int read) {
+                     @Value("${ai.read-timeout-ms:1500}")int read,@Value("${ai.session-token:}") String token) {
         URI uri=URI.create(url);
         if(!"http".equals(uri.getScheme())||!Set.of("localhost","127.0.0.1","[::1]","::1").contains(uri.getHost())||uri.getUserInfo()!=null||uri.getQuery()!=null||uri.getFragment()!=null)
             throw new IllegalArgumentException("Spending analysis must use a local HTTP service");
         if(connect<1||read<1)throw new IllegalArgumentException("Timeouts must be positive");
         var factory=new SimpleClientHttpRequestFactory();factory.setConnectTimeout(Duration.ofMillis(connect));factory.setReadTimeout(Duration.ofMillis(read));
-        client=RestClient.builder().baseUrl(url).requestFactory(factory).build();
+        client=RestClient.builder().baseUrl(url).requestFactory(factory).defaultHeader("X-FinSight-AI",token).build();
     }
     Optional<Result> analyze(Input input) {
         try {

@@ -115,3 +115,9 @@ Limitations: live replacement remains unavailable; existing Java/JPA startup sti
 ## Phase 5 savings coverage
 
 Full native backups and generic inventory/restore verification include all savings tables automatically. JSON/CSV exports now conditionally include savings goals, entries, correction audit and schedules when that schema exists; pre-V5 databases remain export-compatible. Decimal values remain strings, and note/reason formula prefixes receive the existing CSV protection. Allocation data stays separate from bank transactions. A nonempty synthetic V5 savings book (including a corrected entry and schedule) was fully restored into separate copies and exact exports verified before personal migration. Backup scheduling/retention/LaunchAgent scope is unchanged. See [savings migration and verification](savings-goals.md).
+
+## Phase 6 bundled runtime integration
+
+The native app retains the same backup worker, shared maintenance lock, retention/verification rules and approved `com.finsight.local-backups` job. The existing executable/tool/working-directory paths, label, daily/missed-slot policy and 300-second checks remain unchanged. A bundled path migration is prepared but is not installed and needs new explicit approval. The launcher runs only the backup check. No duplicate LaunchAgent or service autostart is added. No replacement or duplicate LaunchAgent has been installed. See [desktop packaging](macos-packaging.md).
+
+App shutdown waits for active backups/restores and leaves the existing PostgreSQL cluster available. Existing archives remain accessible. Future schema upgrades require a fresh complete backup and protected full restore verification. Desktop exports use a native Save panel and owner-only files; external backup destinations can be selected with a native folder panel. Backups/exports remain unencrypted by the app.

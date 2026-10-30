@@ -149,6 +149,7 @@ export default function BackupRecovery() {
   ) {
     setDraft((old) => (old ? { ...old, [key]: value } : old));
   }
+  const chooseDirectory = (window as Window & { finsightDesktop?: { chooseBackupDirectory: () => Promise<string | null> } }).finsightDesktop?.chooseBackupDirectory;
   return (
     <div className="backup-workspace">
       <p className="notice">
@@ -335,6 +336,7 @@ export default function BackupRecovery() {
                       }
                     />
                   </label>
+                  {chooseDirectory && <button type="button" className="secondary" onClick={async () => { try { const path = await chooseDirectory(); if (path) patch("externalDirectory", path); } catch { setError("The local folder dialog could not open. You can enter a folder path directly."); } }}>Choose external backup folder…</button>}
                   <label>
                     External backup overdue after (days)
                     <input
@@ -494,8 +496,8 @@ export default function BackupRecovery() {
               <div>
                 <h2>Financial data exports</h2>
                 <p>
-                  Transactions, categories, recurring schedules, plans, accounts
-                  and preferences. Savings data is not implemented.
+                  Transactions, categories, recurring schedules, plans, accounts,
+                  preferences, savings goals, allocations and correction history.
                 </p>
               </div>
             </div>

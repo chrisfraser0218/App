@@ -16,14 +16,16 @@ import static com.finsight.AiModels.*;
 class AiServiceClient {
     private final RestClient client;
 
+    AiServiceClient(String url,int connect,int read){this(url,connect,read,"");}
+    @org.springframework.beans.factory.annotation.Autowired
     AiServiceClient(@Value("${ai.base-url:http://127.0.0.1:8000}") String baseUrl,
                     @Value("${ai.connect-timeout-ms:500}") int connectTimeout,
-                    @Value("${ai.read-timeout-ms:1500}") int readTimeout) {
+                    @Value("${ai.read-timeout-ms:1500}") int readTimeout,@Value("${ai.session-token:}") String token) {
         if (connectTimeout < 1 || readTimeout < 1) throw new IllegalArgumentException("AI timeouts must be positive");
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofMillis(connectTimeout));
         factory.setReadTimeout(Duration.ofMillis(readTimeout));
-        client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
+        client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).defaultHeader("X-FinSight-AI",token).build();
     }
 
     Optional<ModelPrediction> predict(PredictionInput input) {

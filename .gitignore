@@ -12,3 +12,4 @@ __pycache__/
 .venv/
 *.pyc
 ai-service/artifacts/*.joblib
+desktop/build/

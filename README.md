@@ -12,9 +12,13 @@ A personal finance workspace built with React, TypeScript, Java 21, Spring Boot,
 
 FinSight AI is a private, single-user application running exclusively on the owner's MacBook with **$0 monthly operating cost**. All financial records, service communication, forecasting, and AI must remain local and work offline after initial installation. Cloud hosting, remote databases, external AI services, telemetry, and paid service dependencies are excluded.
 
-[Repository-wide development requirements](AGENTS.md) govern all future work. The [local operation and macOS desktop plan](docs/local-operation.md) evaluates Tauri and records the remaining runtime packaging, service supervision, persistent storage, local security, and backup/restore work. Tauri packaging is deferred until after Phases 2B–2D and the local backup/restore phase. The final Applications app must start its own services and close normally without requiring Terminal, VS Code, or manual Docker/PostgreSQL/Java/Python startup.
+[Repository-wide development requirements](AGENTS.md) govern all future work. Phase 6 adds a native Swift AppKit/WKWebView application with bundled copies of the existing Java, Python and PostgreSQL runtimes. Read the [macOS packaging, installation, security and lifecycle guide](docs/macos-packaging.md). The native UI bundles its service runtimes and requires no Vite, Terminal, VS Code or runtime downloads while the existing PostgreSQL server is running. The unchanged backup agent retains its established external paths; fully independent database/backup lifecycle remains approval-gated.
 
-Current browser development continues with the existing stack. Existing records must never be reset during updates, even when labelled demo. PostgreSQL has now been **backup/restored and verified** at `~/Library/Application Support/FinSight AI/postgres` on **127.0.0.1:55432**. The original `/tmp/finsight-pgdata` directory is stopped and retained. See the [migration report, backup location, startup, and recovery procedure](docs/database-migration.md). Phase 2E adds automatic local backups and isolated restore verification; desktop packaging remains future work.
+Current browser development continues with the existing stack. Existing records must never be reset during updates, even when labelled demo. PostgreSQL has now been **backup/restored and verified** at `~/Library/Application Support/FinSight AI/postgres` on **127.0.0.1:55432**. The original `/tmp/finsight-pgdata` directory is stopped and retained. See the [migration report, backup location, startup, and recovery procedure](docs/database-migration.md). Phase 2E adds automatic local backups and isolated restore verification; Phase 6 packaging preserves this storage and backup design.
+
+## macOS application (Phase 6)
+
+Build output: `desktop/build/FinSight AI.app` and `desktop/build/FinSight AI.dmg`. Copy the app into Applications, then double-click it. The native shell supervises loopback services, checks readiness, protects API access with per-launch secrets, and waits for active maintenance before quitting. PostgreSQL remains available for the existing backup-only LaunchAgent. All data stays outside the bundle. See [installation and verification details](docs/macos-packaging.md), including acceptance checks still pending.
 
 ## Features
 
@@ -62,7 +66,7 @@ The native PostgreSQL setup is unchanged. V3 added three empty recurring tables 
 
 **Balance Forecast** (`/#forecast`) projects actual ledger balance using exact recurring dates and separate planned income/expenses. Choose 1/3/5/6/12 months or a custom future date; inspect daily/monthly tables, chart tooltips, low-balance warnings, and unsaved baseline-versus-what-if comparisons. Plans change projections only and require explicit record/link/handled completion. Forecasts are read-only, use precise Java decimals, reuse Phase 2B recurrence rules, and need neither Python AI nor internet.
 
-[Forecast methodology, UI, completion safety, API examples, tests, and limits](docs/balance-forecast.md). V4 adds two tables without altering financial records. See the [verified pre-V4 backup and integrity report](docs/database-migration.md#phase-2c-v4-upgrade). No Phase 2D calendar or desktop packaging is included.
+[Forecast methodology, UI, completion safety, API examples, tests, and limits](docs/balance-forecast.md). V4 adds two tables without altering financial records. See the [verified pre-V4 backup and integrity report](docs/database-migration.md#phase-2c-v4-upgrade). Later phases add the calendar and native desktop shell without changing these forecast semantics.
 
 ## Phase 2D: interactive Bill Calendar
 

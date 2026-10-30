@@ -94,3 +94,12 @@ def test_incompatible_model_metadata_fails_startup(artifact, tmp_path):
     with pytest.raises(ValueError, match="same pinned scikit-learn"):
         with TestClient(create_app(invalid)):
             pass
+
+
+def test_desktop_ai_session_required_when_configured(monkeypatch, artifact):
+    monkeypatch.setenv("FINSIGHT_AI_SESSION_TOKEN", "synthetic-local-session")
+    with TestClient(create_app(artifact)) as guarded:
+        assert guarded.get("/health").status_code == 403
+        assert guarded.get("/health", headers={"X-FinSight-AI":"wrong"}).status_code == 403
+        assert guarded.get("/health", headers={"X-FinSight-AI":"synthetic-local-session"}).status_code == 200
+        assert guarded.post("/predict-category", headers={"X-FinSight-AI":"synthetic-local-session"}, json={"description":"Starbucks Coffee","amount":8.75}).status_code == 200

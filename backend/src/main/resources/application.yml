@@ -20,6 +20,7 @@ spring:
     problemdetails:
       enabled: true
 ai:
+  session-token: ${FINSIGHT_AI_SESSION_TOKEN:}
   base-url: ${AI_SERVICE_URL:http://127.0.0.1:8000}
   connect-timeout-ms: ${AI_CONNECT_TIMEOUT_MS:500}
   read-timeout-ms: ${AI_READ_TIMEOUT_MS:1500}
@@ -40,3 +41,9 @@ backup:
   python: ${FINSIGHT_BACKUP_PYTHON:python3}
   script: ${FINSIGHT_BACKUP_SCRIPT:../scripts/backup_manager.py}
   poll-delay-ms: ${FINSIGHT_BACKUP_POLL_MS:60000}
+
+desktop:
+  enabled: ${FINSIGHT_DESKTOP_ENABLED:false}
+  session-token: ${FINSIGHT_DESKTOP_SESSION_TOKEN:}
+  instance: ${FINSIGHT_DESKTOP_INSTANCE:}
+  read-only: ${FINSIGHT_DESKTOP_READ_ONLY:false}
