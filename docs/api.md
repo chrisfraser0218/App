@@ -76,3 +76,7 @@ Concurrent operations return 409 or report the standalone lock conflict; setting
 ## Spending Insights (Phase 3)
 
 `GET /api/insights?range=this_month` composes spending summaries, category comparisons, monthly trends, optional unusual-expense alerts, recurring analysis and classified evidence-backed insight cards in one consistent read-only snapshot. Ranges: `this_month`, `last_month`, `last_3`, `last_6`, `last_12`, or `custom&from=YYYY-MM-DD&to=YYYY-MM-DD`. `GET /api/insights/transactions?from=YYYY-MM-DD&to=YYYY-MM-DD&categoryId=UUID` returns owned expense drill-down rows/counts. All financial values are decimal strings. The existing local Python service adds internal `POST /analyze-spending`; it has no database access. See [contracts, formulas, evidence validation and bounds](spending-insights.md).
+
+## Local Financial Assistant (Phase 4)
+
+`POST /api/assistant/questions` accepts `{ "question": "How much did I spend this month?", "context": null }`. It is read-only despite using POST to keep private questions out of URLs. A deterministic allowlisted parser returns grounded answers with kind/date labels, exact-string metrics, owned evidence/count, assumptions, fixed links and validated optional follow-up context. No chat is persisted and no financial/backup mutation tool exists. Unsupported/ambiguous questions return explicit statuses, not invented results. See [complete contract and supported patterns](financial-assistant.md#api).

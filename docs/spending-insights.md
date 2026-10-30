@@ -1,6 +1,6 @@
 # Spending Insights — Phase 3
 
-All analysis runs locally and is read-only. Open `http://127.0.0.1:5173/#insights` with the existing native PostgreSQL, Java API and Vite running. Start the existing FastAPI service for optional transaction anomaly detection; summaries, comparisons, recurring estimates and manual budgeting work without it. No migration, dependency, training job or persistent insight metadata is added. Phase 4, savings goals and desktop packaging are not implemented.
+All analysis runs locally and is read-only. Open `http://127.0.0.1:5173/#insights` with the existing native PostgreSQL, Java API and Vite running. Start the existing FastAPI service for optional transaction anomaly detection; summaries, comparisons, recurring estimates and manual budgeting work without it. No migration, dependency, training job or persistent insight metadata is added. Phase 4 now adds a [deterministic read-only financial assistant](financial-assistant.md); savings goals and desktop packaging remain unimplemented.
 
 ## Data and calculations
 

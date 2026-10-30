@@ -43,7 +43,7 @@ Keep React + TypeScript, Java Spring Boot, PostgreSQL, Python + FastAPI, and sci
 - Future-only edits preserve history; resume skips paused dates; cancel retains all posted entries. Manual reconciliation is explicit and never infers duplicates or silently deletes/rewrites a payment.
 - Recurring expense AI suggestions retain manual category control. Definition feedback is separate from ordinary transaction feedback; no automatic retraining or AI dependency in the posting worker.
 - No personal schedules or transactions were seeded during V3 installation. Verify any future schema update against a new restore-verified local backup before applying it to the personal database.
-- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar is authorized and implemented. Phase 3 Spending Insights is authorized and implemented. Phase 4, savings goals, desktop packaging, deployment, and commits remain unauthorized unless explicitly requested.
+- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar is authorized and implemented. Phase 3 Spending Insights is authorized and implemented. Phase 4 deterministic Local Financial Assistant is now authorized. Savings goals, desktop packaging, deployment, commits and optional LLM installation remain unauthorized unless explicitly requested.
 
 ## Current development priorities
 
@@ -92,7 +92,7 @@ Preserve unrelated work. Do not deploy or make Git commits unless explicitly ins
 - Past balances are unavailable because the opening balance is undated; show recorded history and explain the limitation. Never label future projections actual or infer missing historic amounts/categories from today's schedule.
 - Reuse the existing plan/schedule mutation APIs, idempotency/version/confirmation controls, and manual categories. Calendar reads must never process due dates or mutate personal storage. Independent recurring worker behavior remains unchanged.
 - Query/return the selected month, carrying the existing forecast forward only as necessary. Keep local business dates, decimal strings, response bounds, ownership checks, abort/stale-response handling, keyboard navigation, and usable mobile scrolling.
-- See [Bill Calendar semantics, API, tests, and limitations](docs/bill-calendar.md). Phase 2E backups/recovery are now authorized and implemented. Phase 3 Spending Insights is now authorized; Phase 4 and desktop packaging require a new request.
+- See [Bill Calendar semantics, API, tests, and limitations](docs/bill-calendar.md). Phase 2E backups/recovery are now authorized and implemented. Phase 3 Spending Insights is now authorized; Phase 4 deterministic assistant is now authorized; desktop packaging and optional LLM installation require separate approval.
 
 ## Phase 2E backup/recovery protections
 
@@ -102,7 +102,7 @@ Preserve unrelated work. Do not deploy or make Git commits unless explicitly ins
 - Restore From Backup is isolated verification only: explicit selection/confirmation, archive checks, verified current safety backup, new protected database names, full row/count/balance checks. Live replacement remains unavailable; follow the documented deliberate recovery/cutover procedure. Never DROP an existing database or restore over active data.
 - All backups/exports are unencrypted by this app. Keep owner-only permissions, secrets out of args/logs, safe IDs/paths, local-only endpoints, JSON/origin checks, and exact decimal exports. Do not claim encryption or hardware-loss protection from copies on the same disk. External SSD copies are optional, checksummed, and never justify local deletion.
 - Preserve all four canonical source databases and all financial records through backup/restore tests. Test mode is restricted to the existing isolated cluster and synthetic storage; never bypass the database isolation guard or allow an HTTP request to change database/tool locations.
-- See [backup/recovery semantics and approval-controlled launchd behavior](docs/backup-recovery.md). Phase 3 Spending Insights is now authorized; Phase 4 and desktop packaging remain outside scope.
+- See [backup/recovery semantics and approval-controlled launchd behavior](docs/backup-recovery.md). Phase 3 Spending Insights is now authorized; Phase 4 deterministic assistant is now authorized; desktop packaging remains outside scope.
 
 ## Phase 3 read-only spending insights
 
@@ -110,4 +110,12 @@ Preserve unrelated work. Do not deploy or make Git commits unless explicitly ins
 - Insights must never post/reconcile transactions, change categories/schedules/plans/preferences/balances, save default metadata, or retrain. The independent existing recurring worker remains unchanged. No Phase 3 schema migration is needed.
 - Distinguish recorded facts, statistical observations, normalized cadence estimates and recommendations. Show exact comparison dates, incomplete-data abstention and bounded evidence. Never label synthetic evaluation real-world accuracy or a robust threshold a probability.
 - Reuse ForecastService for exact pending recurring payments and permanent receipts for recorded linkage. Do not count plan/recurring links twice or call steady-cadence equivalents exact month totals. Keep manual categorization and all previous financial/backup behavior intact.
-- See [Spending Insights contracts, methods, evaluation and limits](docs/spending-insights.md). Phase 4 assistant, savings goals and desktop packaging need separate authorization.
+- See [Spending Insights contracts, methods, evaluation and limits](docs/spending-insights.md). Phase 4 deterministic assistant is now authorized; savings goals, optional LLM installation and desktop packaging need separate authorization.
+
+## Phase 4 deterministic assistant protections
+
+- Preserve the offline allowlisted intent parser, read-only dispatcher and existing FinanceService/SpendingService/ForecastService/CalendarService calculation sources. Never turn questions, context or retrieved descriptions into executable SQL, shell/filesystem commands, arbitrary service methods or mutations.
+- All financial numbers must come from existing deterministic services; maintain exact decimal-string responses, date validation, owned evidence, explicit actual/projected/estimate/hypothetical labels and honest ambiguity/empty/outage behavior. Hypotheticals remain transient ForecastService scenarios.
+- Chat/context remain bounded page memory only, never persisted or logged. Revalidate client-supplied context and render retrieved text only as escaped data. Assistant reads suppress frontend posting without disabling independently authorized recurring/backup workers.
+- No LLM/runtime/model download is authorized by Phase 4. Hardware/model assessment is documentation only; require explicit approval before installing Ollama, weights or another inference runtime. Keep existing Python statistical/categorization behavior intact.
+- See [Financial Assistant architecture, language patterns and verification](docs/financial-assistant.md). Phase 5 savings goals, desktop packaging, deployment and commits remain outside scope.

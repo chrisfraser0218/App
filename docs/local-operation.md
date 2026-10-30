@@ -1,12 +1,12 @@
 # Permanent local operation and future macOS application
 
-Status: permanent architecture and future desktop plan, with a verified one-time native PostgreSQL backup/restore and persistent migration. No desktop launcher or automatic backup scheduler is implemented. The owner established this direction on October 29, 2026; it replaces previous cloud/AWS and public multi-user deployment suggestions. Repository-wide instructions are in [AGENTS.md](../AGENTS.md).
+Status: permanent architecture and future desktop plan, with a verified one-time native PostgreSQL backup/restore and persistent migration. No desktop launcher is implemented; Phase 2E now provides approved automatic local backups. The owner established this direction on October 29, 2026; it replaces previous cloud/AWS and public multi-user deployment suggestions. Repository-wide instructions are in [AGENTS.md](../AGENTS.md).
 
 ## Operating contract
 
 FinSight AI is a private, single-user application on one MacBook, with $0 monthly operating cost. Financial records, recurring processing, forecasting, categorization, model training, and service communication remain local. Normal use must work offline, with no paid APIs, remote databases, telemetry, hosted authentication, CDN assets, or model downloads at launch. Dependency installation and intentional development updates are separate from normal application use.
 
-Preserve React/TypeScript, Java/Spring Boot, PostgreSQL, Python/FastAPI, and scikit-learn. Any stack replacement needs an explanation and the owner's approval. Docker is a current development convenience; a final desktop application must not depend on the owner manually starting it or on Docker being the application's required runtime.
+Preserve React/TypeScript, Java/Spring Boot, PostgreSQL, Python/FastAPI, and scikit-learn. Any stack replacement needs an explanation and the owner's approval. Use native Homebrew PostgreSQL; Docker is prohibited for current development and verification.
 
 ## Current state and gaps
 
@@ -15,10 +15,10 @@ Preserve React/TypeScript, Java/Spring Boot, PostgreSQL, Python/FastAPI, and sci
 | Browser UI        | React/Vite; loopback dev server; local assets                              | Keep browser workflow through Phases 2B–2D; package built assets later                                                        |
 | Java API          | Loopback by default; local PostgreSQL; bounded AI requests                 | Desktop-managed compatible Java runtime, lifecycle, readiness, and local access controls                                      |
 | AI service        | Local saved scikit-learn pipeline; no database client                      | Bundle/provision Python and numerical libraries, trusted model artifact, architecture compatibility; no runtime pip/downloads |
-| PostgreSQL        | Development supports a local instance or a persistent Compose named volume | Persistent cluster selected and verified; future desktop-managed PostgreSQL with safe upgrades and shutdown                   |
+| PostgreSQL        | Existing native persistent Homebrew cluster on loopback 55432 | Persistent cluster selected and verified; future desktop-managed PostgreSQL with safe upgrades and shutdown                   |
 | Records           | Versioned Flyway migrations preserve existing data                         | One-time verified backup/restore and cutover complete; recurring backup policy and restore UX remain                          |
 | Local security    | Host/origin checks and scoped ledger access; no production authentication  | Explicit local threat model, least-privilege roles, owner-only storage, secrets and session protection                        |
-| Backups           | No automated application backup/restore implementation                     | Scheduled local backups, retention, integrity checks, and restoration drills after the browser feature work                   |
+| Backups           | Phase 2E local scheduler/retention/verified restore copies                     | Continue verified local backups; desktop lifecycle integration remains later work                   |
 | Offline use       | Existing assets and model are local once installed/trained                 | Formal acceptance with networking disabled for budgeting, recurring processing, forecasts, and AI                             |
 | Desktop lifecycle | No desktop wrapper or service supervisor                                   | Start from Applications, supervise services, catch up recurring work, and quit normally                                       |
 
@@ -122,3 +122,7 @@ Live restoration is unavailable; the UI performs confirmed isolated copy verific
 ## Phase 3 operation
 
 Open `http://127.0.0.1:5173/#insights` with the same local PostgreSQL/Java/Vite startup. Start the existing FastAPI service on `127.0.0.1:8000` for optional robust spending detection; it uses no new trained artifact. Summaries, comparisons, recurring analysis and manual entry remain usable when AI is unavailable. No new service, dependency, schema migration, financial write, persistent schedule or database configuration change is introduced. Existing independent recurring and backup workers continue unchanged. See [Spending Insights](spending-insights.md) for exact date/normalization semantics, offline evaluation and synthetic-only acceptance checks.
+
+## Phase 4 operation
+
+Open `http://127.0.0.1:5173/#assistant` using the same native services. The deterministic assistant has no LLM/runtime/download requirement and needs no migration. Existing optional Python statistics remain useful for unusual-spending questions; all core questions work offline with Java/PostgreSQL. Chat remains in page memory only. No new persistent service or PostgreSQL configuration change was made. See [supported questions, local model assessment, security and tests](financial-assistant.md). Optional model/runtime installation needs explicit owner approval; none was installed.
