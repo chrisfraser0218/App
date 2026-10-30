@@ -9,3 +9,5 @@ spring:
 recurring:
   processing:
     enabled: false
+backup:
+  enabled: false

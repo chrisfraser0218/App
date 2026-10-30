@@ -18,10 +18,12 @@ export default function RecurringTransactions({
   categories,
   transactions,
   onChanged,
+  focusRuleId,
 }: {
   categories: Category[];
   transactions: Transaction[];
   onChanged: () => Promise<void>;
+  focusRuleId?: string;
 }) {
   const [rules, setRules] = useState<RecurringRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +56,19 @@ export default function RecurringTransactions({
   useEffect(() => {
     void load();
   }, [transactions]);
+  useEffect(() => {
+    const focused = rules.find((r) => r.id === focusRuleId);
+    if (focused) {
+      void details(focused);
+      setTimeout(
+        () =>
+          document
+            .getElementById("recurring-details")
+            ?.scrollIntoView({ block: "start" }),
+        0,
+      );
+    }
+  }, [focusRuleId, rules]);
   async function details(rule: RecurringRule) {
     setDetailRule(rule);
     setDetailError("");
@@ -397,7 +412,7 @@ export default function RecurringTransactions({
         )}
       </section>
       {detailRule && (
-        <section className="panel recurring-details">
+        <section id="recurring-details" className="panel recurring-details">
           <div className="panel-heading">
             <div>
               <h2>{detailRule.description}: occurrences</h2>

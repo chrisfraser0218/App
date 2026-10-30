@@ -104,3 +104,17 @@ When developing updates, stop the owned API before replacing the executable JAR 
 Open `http://127.0.0.1:5173/#forecast` after the same native PostgreSQL/backend/frontend startup above. No extra service, dependency, Docker, or internet is required for forecasts. Python AI remains optional for existing categorization. Forecast reads do not process recurring dates; the existing independent startup/poll worker continues its usual catch-up. Plans never auto-post, even after reopening: explicitly complete, link an actual payment, or mark handled. See [forecast behavior and limits](balance-forecast.md).
 
 V4 adds planned-transaction/preference storage on the same persistent cluster/port without changing PostgreSQL configuration. The fresh verified backup is `~/Library/Application Support/FinSight AI/backups/phase2c-pre-v4-20261029T200833Z-51b8a4/`; retained restore copies and private verification manifests are documented in the [V4 migration report](database-migration.md#phase-2c-v4-upgrade). Keep backups and credentials owner-only. Recovery follows the existing procedure: restore and verify into separate recovery storage, never overwrite the current database, and account for newer writes before cutover. Automatic backups/desktop lifecycle are still future work.
+
+## Phase 2D operation
+
+Open `http://127.0.0.1:5173/#calendar` using the same local PostgreSQL/backend/frontend startup. No new service, dependency, table, migration, or persistent database change is required. Calendar reads use the shared forecasting/recurrence engines; existing independent recurring catch-up continues. Calendar-created plans require explicit completion or linking before affecting actual balance. Historical balances are not invented. See [calendar behavior, API, and verification](bill-calendar.md).
+
+Keep regression writes/screenshots in the existing isolated synthetic environment. Do not use personal storage or retained restore copies as fixtures. Phase 2E automatic backups and macOS packaging are still future work.
+
+## Phase 2E local backup operation
+
+The existing Java backend now checks the configured daily backup slot on readiness/every minute, with no frontend requirement. The stdlib Python maintenance worker uses the existing private native PostgreSQL socket/admin role and checks cluster identity/tool compatibility. No new database table, migration, cloud dependency, or desktop supervisor is introduced. Native services/startup remain unchanged; settings are at `/#settings`.
+
+Managed data is under `backups/managed`, with private schedule/history/lock and verified archives. Existing migration/verification folders remain protected. The backup-only LaunchAgent was prepared/reviewed, explicitly approved, then installed and loaded for the owner. Future persistent-service changes still require approval. It never starts PostgreSQL or application services. Powered-off/asleep/missing-service intervals are caught up on the next available invocation. See [backup guide](backup-recovery.md) for timing, paths, approval instructions, retention, SSD copies, and failure behavior.
+
+Live restoration is unavailable; the UI performs confirmed isolated copy verification after a verified current safety backup. Actual recovery still requires the separate verified cutover procedure. Archive encryption, Keychain integration, automated deletion of protected restore copies, and desktop packaging are not implemented. Keep verified backups periodically on a disconnected SSD; copies on the same Mac do not protect against hardware loss.

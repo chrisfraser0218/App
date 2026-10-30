@@ -11,11 +11,15 @@ export default function PlannedTransactions({
   transactions,
   today,
   onChanged,
+  createRequest,
+  onlyPlanId,
 }: {
   categories: Category[];
   transactions: Transaction[];
   today: string;
   onChanged: () => Promise<void>;
+  createRequest?: { date: string; type: "INCOME" | "EXPENSE"; key: number };
+  onlyPlanId?: string;
 }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [error, setError] = useState("");
@@ -45,6 +49,15 @@ export default function PlannedTransactions({
   useEffect(() => {
     void load();
   }, [transactions]);
+  useEffect(() => {
+    if (createRequest) {
+      setSelected(undefined);
+      setModal("create");
+    }
+  }, [createRequest?.key]);
+  const visiblePlans = onlyPlanId
+    ? plans.filter((p) => p.id === onlyPlanId)
+    : plans;
   function close() {
     if (!busy) {
       setModal(null);
@@ -172,7 +185,7 @@ export default function PlannedTransactions({
               </tr>
             </thead>
             <tbody>
-              {plans.map((p) => (
+              {visiblePlans.map((p) => (
                 <tr key={p.id}>
                   <td>
                     <strong>{p.description}</strong>
@@ -251,6 +264,8 @@ export default function PlannedTransactions({
             categories={categories}
             today={today}
             existing={selected}
+            initialDate={createRequest?.date}
+            initialType={createRequest?.type}
             onSave={save}
             onClose={close}
           />

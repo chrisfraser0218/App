@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 type IconName =
+  | "calendar"
   | "repeat"
   | "grid"
   | "list"
@@ -21,6 +22,12 @@ export default function Icon({
   size?: number;
 }) {
   const paths: Record<IconName, ReactNode> = {
+    calendar: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="3" />
+        <path d="M7 3v4M17 3v4M3 11h18M7 15h2M13 15h2" />
+      </>
+    ),
     repeat: (
       <>
         <path d="M4 8h12a4 4 0 0 1 4 4v1M16 4l4 4-4 4M20 16H8a4 4 0 0 1-4-4v-1M8 20l-4-4 4-4" />

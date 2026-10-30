@@ -172,3 +172,47 @@ Executed verification: **95 backend tests on H2 and independently on the existin
 Startup/credentials/ports are unchanged. See [local operation](local-operation.md) and [forecast methodology, contracts, and limits](balance-forecast.md). Recovery still requires a separate empty recovery destination and full verification before explicit cutover; never restore this pre-V4 snapshot over the live database or discard newer payments/plans to make an old fingerprint match. Automatic backup scheduling, retention cleanup, Phase 2D, and desktop packaging remain future work.
 
 After verification, the synthetic browser API/frontend and isolated test server were stopped cleanly, retaining all their databases/data directories. Normal frontend (`127.0.0.1:5173`), personal backend (`127.0.0.1:8080`), local AI (`127.0.0.1:8000`), and persistent PostgreSQL were left running. Read-only proxy comparisons matched the personal account/plans/preferences/forecast endpoints, and AI health reported ready.
+
+## Phase 2D read-only calendar update
+
+Phase 2D introduces **no tables, database migration, configuration change, or seeded financial data**. Applied Flyway V1–V4 files/history are unchanged. No new pre-migration backup was required because no migration was applied; earlier restore-verified backups and protected restore copies remain intact.
+
+Before replacing the backend executable, the owned personal writer was stopped and a fresh private integrity snapshot was captured for all four preserved source databases. Backend/H2/PostgreSQL regression writes and browser acceptance used only the existing isolated test cluster on 55434. A synthetic browser database was added within that cluster; no cluster was initialized. The original `/tmp/finsight-pgdata` was neither started nor modified. Personal PostgreSQL stayed on the same persistent directory and port.
+
+After rebuilding/testing and restarting the personal API, read-only verification confirmed:
+
+- Every pre-existing user-table fingerprint/count, sequence state, transaction identity, exact account balance, and Flyway history row matched the current pre-update snapshot.
+- Recurring rules/receipts, plans/preferences/completion links, categories/users/accounts, and AI predictions/feedback were preserved.
+- Other source databases and PostgreSQL configuration files were unchanged.
+- Calendar daily projections and monthly income/expenses/ending balance matched the existing forecast exactly for current and future months. Historical months returned unavailable balances with an explanation.
+- Calendar/forecast reads did not change personal records. Browser writes/screenshots used synthetic data only.
+
+Owner-only private comparison evidence is at:
+
+`~/Library/Application Support/FinSight AI/backups/phase2d-verification-20261030T110551Z/`
+
+This folder holds integrity snapshots and a verification report, **not a recoverable database backup**. Recovery continues to use the existing timestamped full archives and the separate-restore verification procedure above; never overwrite current storage or discard newer payments/plans to match an older archive.
+
+Executed tests: **123 backend on H2 and independently on isolated PostgreSQL**, **74 frontend**, **27 AI**, executable backend packaging, and optimized frontend build. Synthetic browser acceptance passed the five requested calendar scenarios with 18 checks and no runtime errors. Existing recurring/AI/reconciliation browser workflows and six legacy dashboard/manual/AI balance checks also passed. Final mobile calendar verification checked readable internally scrolling cells, no page overflow, and exact daily forecast equality with unchanged synthetic records. One existing upstream Python test-client deprecation warning remains.
+
+Normal startup, credentials, storage, and ports are unchanged. The synthetic test server/processes are stopped after verification while retaining their data. See the [calendar guide](bill-calendar.md) for semantics and limits. Automatic backup scheduling, retention cleanup, Phase 2E/3 features, deployment, and macOS packaging remain unimplemented.
+
+## Phase 2E backup/recovery update
+
+Phase 2E adds no schema migration or database reset. Applied V1–V4 files/history, all canonical source records, and native PostgreSQL configuration are preserved. The original `/tmp/finsight-pgdata` remains stopped and untouched. Backup settings/history live in private filesystem metadata under `backups/managed`, independent of application schema health.
+
+The first real managed backup is:
+
+`~/Library/Application Support/FinSight AI/backups/managed/bkp-20261030113653-2c5d7c298326/`
+
+It covers `finsight_demo`, `finsight_test`, `postgres`, and `finsight_local_maintenance`, plus globals and checksummed PostgreSQL configuration reference copies. Every native archive was decoded, checksummed, and checked for PostgreSQL 15 compatibility. Dump and metadata used matching exported snapshots. Full protected-copy restores were then compared against the manifest **and independently against the pre-update source inventories**, including every user-table fingerprint/count, exact account balance, and sequence state. All matched. These are retained protected financial copies in the existing persistent cluster, not automated-test fixtures. No new cluster, DROP, active restore, or PostgreSQL configuration change occurred.
+
+The owner explicitly approved the backup-only per-user LaunchAgent. Its reviewed plist is installed at `~/Library/LaunchAgents/com.finsight.local-backups.plist`, loaded as `com.finsight.local-backups`, with a successful standalone invocation verified while the personal backend was stopped. The covered daily slot correctly produced no duplicate. It runs at login/load and checks every five minutes while the owner session/Mac/services are available; it starts no PostgreSQL or application services. The backend also checks on startup/every minute using the same lock/history. See [complete schedule, DST, sleep/offline-service semantics, and removal instructions](backup-recovery.md#approved-macos-launchd-backup-agent).
+
+Safety: existing migration archives are outside managed retention. Safety copies, the last valid backup, and the latest fully restore-verified point remain protected. User-selected restore tests require confirmation and a new verified current safety backup, then create/verify only protected copies. Live replacement is unavailable; actual recovery still follows the separate-location verification and deliberate cutover procedure above. No backup or export encryption is implemented. Keep a verified disconnected SSD copy for protection against loss of the Mac itself.
+
+Verification executed: **131 backend tests on H2 and independently on the existing isolated PostgreSQL cluster**, **86 frontend tests**, **35 backup-worker tests including six real native PostgreSQL integration cases**, **27 AI tests**, and both production builds. Native tests include source changes after the dump while shared-snapshot metadata remains consistent, restore corruption/failure, preservation, scheduling/catch-up/DST, safe retention, exports, permissions, redaction, and simulated SSD copies. Synthetic browser scenarios A–F passed ten acceptance checks, plus six legacy dashboard/manual/AI checks and final mobile/export-persistence checks, with no runtime errors. Real external hardware/encryption was not tested. One existing upstream Python test-client deprecation warning remains.
+
+All personal verification remained read-only apart from explicitly authorized backup files/protected restore copies. No real financial payloads appear in source, test fixtures, logs, exports to external services, or screenshots. Test writes used only the existing isolated synthetic PostgreSQL environment. See [Backup & Recovery](backup-recovery.md) for API contracts, archive versus full-restore proof, SSD/export workflow, and known limitations. No Phase 3, desktop packaging, deployment, or commits were performed.
+
+Final owner-only evidence is under `~/Library/Application Support/FinSight AI/backups/phase2e-verification-20261030T121003Z/` (integrity snapshots/report, not a separate database backup). Final real-browser acceptance also confirmed that Settings/archive checks remain usable after the isolated PostgreSQL server stops, and export downloads survive a scheduled no-op. Unused Spring Boot development-user/password generation is disabled; existing local host/origin restrictions still pass all tests. The synthetic servers were stopped with data retained, and normal personal frontend/backend/AI/PostgreSQL plus the approved backup-only LaunchAgent were restored/left running.

@@ -112,7 +112,7 @@ class ForecastService {
             (int)events.stream().filter(e->e.source().equals("RECURRING")&&e.overdue()).count(),(int)events.stream().filter(e->e.source().equals("PLANNED")&&e.overdue()).count());
         return new Forecast(summary,m(threshold),List.copyOf(days),List.copyOf(months),List.copyOf(warnings));
     }
-    private BigDecimal total(List<Event> events,TransactionType type,String source) {return events.stream().filter(e->e.type()==type&&(source==null||e.source().equals(source))).map(e->new BigDecimal(e.amount())).reduce(BigDecimal.ZERO,BigDecimal::add);}
+    BigDecimal total(List<Event> events,TransactionType type,String source) {return events.stream().filter(e->e.type()==type&&(source==null||e.source().equals(source))).map(e->new BigDecimal(e.amount())).reduce(BigDecimal.ZERO,BigDecimal::add);}
     private Warning warning(LocalDate date,BigDecimal balance,String kind,List<Event> entries) {return new Warning(date,m(balance),balance.signum()<0?"NEGATIVE":"LOW",kind,entries);}
     private String m(BigDecimal amount){return amount.setScale(2).toPlainString();}
     private void checkSize(List<Event> events){if(events.size()>MAX_EVENTS)throw bad("Too many occurrences. Shorten the horizon or process pending recurring dates");}

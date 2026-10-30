@@ -35,3 +35,8 @@ recurring:
   poll-delay-ms: ${RECURRING_POLL_DELAY_MS:30000}
   processing:
     enabled: ${RECURRING_PROCESSING_ENABLED:true}
+backup:
+  enabled: ${FINSIGHT_BACKUP_ENABLED:true}
+  python: ${FINSIGHT_BACKUP_PYTHON:python3}
+  script: ${FINSIGHT_BACKUP_SCRIPT:../scripts/backup_manager.py}
+  poll-delay-ms: ${FINSIGHT_BACKUP_POLL_MS:60000}

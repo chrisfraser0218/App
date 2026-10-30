@@ -7,24 +7,30 @@ export default function PlanForm({
   categories,
   today,
   existing,
+  initialDate,
+  initialType,
   onSave,
   onClose,
 }: {
   categories: Category[];
   today: string;
   existing?: Plan;
+  initialDate?: string;
+  initialType?: TransactionType;
   onSave: (p: PlanInput) => Promise<void>;
   onClose: () => void;
 }) {
   const [type, setType] = useState<TransactionType>(
-    existing?.type ?? "EXPENSE",
+    existing?.type ?? initialType ?? "EXPENSE",
   );
   const [description, setDescription] = useState(existing?.description ?? "");
   const [amount, setAmount] = useState(existing?.amount ?? "");
   const [categoryId, setCategory] = useState(
     existing?.categoryId ?? categories.find((c) => c.type === type)?.id ?? "",
   );
-  const [date, setDate] = useState(existing?.date ?? nextDate(today));
+  const [date, setDate] = useState(
+    existing?.date ?? initialDate ?? nextDate(today),
+  );
   const [requestId] = useState(
     () => existing?.requestId ?? crypto.randomUUID(),
   );

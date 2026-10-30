@@ -43,7 +43,7 @@ Keep React + TypeScript, Java Spring Boot, PostgreSQL, Python + FastAPI, and sci
 - Future-only edits preserve history; resume skips paused dates; cancel retains all posted entries. Manual reconciliation is explicit and never infers duplicates or silently deletes/rewrites a payment.
 - Recurring expense AI suggestions retain manual category control. Definition feedback is separate from ordinary transaction feedback; no automatic retraining or AI dependency in the posting worker.
 - No personal schedules or transactions were seeded during V3 installation. Verify any future schema update against a new restore-verified local backup before applying it to the personal database.
-- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar, desktop packaging, and commits remain unauthorized unless explicitly requested.
+- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar is authorized and implemented. Phase 3, desktop packaging, deployment, and commits remain unauthorized unless explicitly requested.
 
 ## Current development priorities
 
@@ -65,7 +65,7 @@ Use precise decimal money, explicit calendar/time-zone semantics, and determinis
 - Evaluate Tauri as a candidate, not an already approved framework replacement. Keep the current frontend, Java API, Python ML service, and PostgreSQL.
 - The final app must launch from Applications, start and supervise its necessary local services automatically, and close normally without requiring VS Code, Terminal, manual Docker startup, or manual database/Java/Python startup.
 - Future packaging must bundle/provision compatible local runtimes and models, manage PostgreSQL safely, coordinate readiness/migrations/recurring catch-up, handle crashes and ports, and shut down only processes it owns without losing data.
-- Design automatic local backups, pre-upgrade backups, retention, integrity checks, and restore drills into the later persistence phase. A one-time verified backup/restore and persistent migration now exists; automatic backup scheduling/retention, complete offline acceptance, and desktop lifecycle automation do not. Do not claim those future capabilities are implemented.
+- Design automatic local backups, pre-upgrade backups, retention, integrity checks, and restore drills into the later persistence phase. A one-time verified backup/restore and persistent migration now exists; Phase 2E now adds local backup scheduling/retention and isolated restoration verification. Complete offline desktop acceptance and desktop lifecycle automation remain future work.
 - Keep updates, backups, models, and data local. A paid Apple Developer membership, cloud updater, or subscription must not become an operating requirement for this private app.
 
 ## Build/runtime safety
@@ -84,3 +84,22 @@ Preserve unrelated work. Do not deploy or make Git commits unless explicitly ins
 - Plans never auto-post. Completion requires explicit RECORD (due only), LINK (with mismatched-amount confirmation), or HANDLED. Preserve stable request IDs, row/version locks, unique payment links, and completion history even if a linked actual payment is deleted. Do not silently reopen completed plans or infer duplicate payments.
 - What-if state stays transient. Threshold persistence is an explicit versioned user action. Preserve actual/projected distinctions, manual categories, existing recurring catch-up, and all AI functionality.
 - See [forecast semantics and contracts](docs/balance-forecast.md). Pre-V4 backup: `~/Library/Application Support/FinSight AI/backups/phase2c-pre-v4-20261029T200833Z-51b8a4/`. Its private manifest maps retained protected restore copies; never use these financial copies as test databases or delete them as cleanup.
+
+## Phase 2D calendar behavior
+
+- Calendar composition is read-only and adds no tables/migrations. Reuse ForecastService for exact balances/flows/warnings and Phase 2B scheduling/receipts; never generate an independent occurrence or money calculation engine.
+- Preserve one recorded row per actual payment, including dual recurring/plan links. Completion/handled/canceled markers on scheduled dates do not add cash again. Never recreate removed/handled receipts.
+- Past balances are unavailable because the opening balance is undated; show recorded history and explain the limitation. Never label future projections actual or infer missing historic amounts/categories from today's schedule.
+- Reuse the existing plan/schedule mutation APIs, idempotency/version/confirmation controls, and manual categories. Calendar reads must never process due dates or mutate personal storage. Independent recurring worker behavior remains unchanged.
+- Query/return the selected month, carrying the existing forecast forward only as necessary. Keep local business dates, decimal strings, response bounds, ownership checks, abort/stale-response handling, keyboard navigation, and usable mobile scrolling.
+- See [Bill Calendar semantics, API, tests, and limitations](docs/bill-calendar.md). Phase 2E backups/recovery are now authorized and implemented. Do not implement Phase 3 or desktop packaging without a new request.
+
+## Phase 2E backup/recovery protections
+
+- Preserve the stdlib local worker, native PostgreSQL 15 tools, private snapshot manifests, shared `flock`, atomic progress/history, and matching dump/metadata exported snapshots. Never replace this with live directory copies or remote services.
+- Managed storage is `~/Library/Application Support/FinSight AI/backups/managed`. Retention applies only to verified managed bkp-* folders. Never prune legacy migration archives, safety backups, the final valid backup, or the latest fully restore-verified point without newer full proof. Protected restored databases are never test fixtures or automatic cleanup targets.
+- Daily/missed scheduling is frontend-independent via backend startup/poll or the backup-only LaunchAgent `com.finsight.local-backups`, explicitly approved, installed and loaded in Phase 2E. Routine checks/reloads within that approved behavior need no new approval. Never introduce additional persistent services or expanded behavior without owner approval. Polling/launchd cannot back up a powered-off Mac; detect missed slots when services return.
+- Restore From Backup is isolated verification only: explicit selection/confirmation, archive checks, verified current safety backup, new protected database names, full row/count/balance checks. Live replacement remains unavailable; follow the documented deliberate recovery/cutover procedure. Never DROP an existing database or restore over active data.
+- All backups/exports are unencrypted by this app. Keep owner-only permissions, secrets out of args/logs, safe IDs/paths, local-only endpoints, JSON/origin checks, and exact decimal exports. Do not claim encryption or hardware-loss protection from copies on the same disk. External SSD copies are optional, checksummed, and never justify local deletion.
+- Preserve all four canonical source databases and all financial records through backup/restore tests. Test mode is restricted to the existing isolated cluster and synthetic storage; never bypass the database isolation guard or allow an HTTP request to change database/tool locations.
+- See [backup/recovery semantics and approval-controlled launchd behavior](docs/backup-recovery.md). Phase 3 and desktop packaging remain outside scope.

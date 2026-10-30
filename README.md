@@ -2,7 +2,7 @@
 
 A personal finance workspace built with React, TypeScript, Java 21, Spring Boot, and PostgreSQL. Phase 1 delivers a functional local demo: record income and expenses, set an opening balance, and understand spending through interactive charts.
 
-**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. A bill calendar and AI assistant remain future work.
+**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. Phase 2D adds the interactive Bill Calendar. An AI assistant remains future work.
 
 ![FinSight AI financial dashboard in light mode](docs/screenshots/dashboard-light.png)
 
@@ -14,7 +14,7 @@ FinSight AI is a private, single-user application running exclusively on the own
 
 [Repository-wide development requirements](AGENTS.md) govern all future work. The [local operation and macOS desktop plan](docs/local-operation.md) evaluates Tauri and records the remaining runtime packaging, service supervision, persistent storage, local security, and backup/restore work. Tauri packaging is deferred until after Phases 2B–2D and the local backup/restore phase. The final Applications app must start its own services and close normally without requiring Terminal, VS Code, or manual Docker/PostgreSQL/Java/Python startup.
 
-Current browser development continues with the existing stack. Existing records must never be reset during updates, even when labelled demo. PostgreSQL has now been **backup/restored and verified** at `~/Library/Application Support/FinSight AI/postgres` on **127.0.0.1:55432**. The original `/tmp/finsight-pgdata` directory is stopped and retained. See the [migration report, backup location, startup, and recovery procedure](docs/database-migration.md). Automatic backup scheduling and desktop packaging remain future work.
+Current browser development continues with the existing stack. Existing records must never be reset during updates, even when labelled demo. PostgreSQL has now been **backup/restored and verified** at `~/Library/Application Support/FinSight AI/postgres` on **127.0.0.1:55432**. The original `/tmp/finsight-pgdata` directory is stopped and retained. See the [migration report, backup location, startup, and recovery procedure](docs/database-migration.md). Phase 2E adds automatic local backups and isolated restore verification; desktop packaging remains future work.
 
 ## Features
 
@@ -64,6 +64,20 @@ The native PostgreSQL setup is unchanged. V3 added three empty recurring tables 
 
 [Forecast methodology, UI, completion safety, API examples, tests, and limits](docs/balance-forecast.md). V4 adds two tables without altering financial records. See the [verified pre-V4 backup and integrity report](docs/database-migration.md#phase-2c-v4-upgrade). No Phase 2D calendar or desktop packaging is included.
 
+## Phase 2D: interactive Bill Calendar
+
+**Bill Calendar** (`/#calendar`) shows exact recurring/planned dates, recorded payments and completion markers, projected daily closes, monthly summaries, and low-balance warnings using the same Phase 2C forecast engine. Select a future date to add a plan; edit/cancel/complete/link through the existing workflow. Navigation supports months/years, today, keyboard control, desktop/mobile layouts, and dark mode. Historical balances are explicitly unavailable because the opening balance is undated.
+
+No schema migration, new dependency/service, or personal test writes are needed. [Calendar guide, API, and limits](docs/bill-calendar.md) · [data-integrity report](docs/database-migration.md#phase-2d-read-only-calendar-update).
+
+## Phase 2E: Backup & Recovery
+
+**Settings → Backup & Recovery** (`/#settings`) provides asynchronous native PostgreSQL backups, daily scheduling/catch-up independent of the frontend, archive/full restore verification, safe configurable retention, optional verified SSD copies, and exact JSON/CSV exports. Existing migration archives are protected. A selected restore test first creates a verified current safety backup and restores only into new protected copies; live database replacement is unavailable. No schema migration is needed.
+
+Defaults: 02:00 America/New_York; 7 daily, 4 weekly, 3 monthly periods; full restore test every 7 days. Managed backups are under `~/Library/Application Support/FinSight AI/backups/managed`. Backups are **unencrypted**. A disconnected verified SSD copy is necessary for protection from loss of the Mac itself. The owner-approved per-user backup LaunchAgent is installed and loaded; it checks independently of the frontend/backend. Changes to persistent services still require approval.
+
+[Backup/recovery guide, APIs, scheduling/launchd, SSD workflow, exports, and limitations](docs/backup-recovery.md).
+
 ## Prerequisites
 
 - Python **3.11** for the optional AI service.
@@ -106,6 +120,12 @@ Legacy Compose files remain in source history but are not the supported operatin
 
 ## Verify
 
+Phase 2E verification passed: **131 backend tests on H2 and isolated PostgreSQL, 86 frontend tests, 35 backup-worker tests (six native integrations), 27 AI tests**, both production builds, and browser scenarios A–F. The first real managed backup was fully restored/verified without changing canonical financial records. The approved backup-only LaunchAgent is loaded. See the [Phase 2E verification report](docs/database-migration.md#phase-2e-backuprecovery-update).
+
+Run the stdlib backup tests with `python3 -m unittest discover -s scripts/tests -v`. Six native PostgreSQL cases are opt-in and must use the existing isolated environment; a default run reports those as skipped. Never point backup integration tests at personal data.
+
+Phase 2D verification passed: **123 backend tests on H2 and isolated PostgreSQL, 74 frontend tests, 27 AI tests**, both production builds, and synthetic browser acceptance. No schema change; all existing personal records/balances were verified unchanged. See the [calendar verification report](docs/database-migration.md#phase-2d-read-only-calendar-update).
+
 Phase 2C verification passed: **95 backend tests on H2 and isolated PostgreSQL, 54 frontend tests, 27 AI tests**, executable backend packaging, and optimized frontend build. Synthetic browser acceptance covered forecast interactions and existing recurring/manual/AI workflows. See the [V4 integrity and test report](docs/database-migration.md#phase-2c-v4-upgrade).
 
 ```sh
@@ -123,7 +143,7 @@ mvn verify
 
 The backend suite starts the full application with MockMvc, Flyway, and H2 in PostgreSQL compatibility mode. It covers CRUD, exact decimal balances, starting balance changes, invalid values, category/type validation, calendar-month summaries, data isolation, and local access restrictions. Phase 1 tests roll back their changes; prediction integration tests clear their isolated synthetic fixtures.
 
-For Phase 2B/2C PostgreSQL testing, reuse the already-existing isolated cluster under `/tmp/finsight-isolated-verification-12473ab7c796/postgres` on loopback port 55434 with its synthetic `finsight_verification` database. Do not initialize another cluster, use Docker, or repoint tests to the persistent personal cluster. If the existing isolated environment is unavailable, stop and report the limitation rather than bypassing the guard or creating a cluster. The test startup guard permits this dedicated location (or CI's ephemeral PostgreSQL container), and rejects personal clusters **before Flyway, seeding, or fixture deletes**. Neither preserved database named `finsight_test` is a safe test target.
+For Phase 2B–2D PostgreSQL testing, reuse the already-existing isolated cluster under `/tmp/finsight-isolated-verification-12473ab7c796/postgres` on loopback port 55434 with its synthetic `finsight_verification` database. Do not initialize another cluster, use Docker, or repoint tests to the persistent personal cluster. If the existing isolated environment is unavailable, stop and report the limitation rather than bypassing the guard or creating a cluster. The test startup guard permits this dedicated location (or CI's ephemeral PostgreSQL container), and rejects personal clusters **before Flyway, seeding, or fixture deletes**. Neither preserved database named `finsight_test` is a safe test target.
 
 Pass test credentials through the environment, not Java command arguments:
 
@@ -181,7 +201,7 @@ If changing `PORT`, also change the Vite proxy target and allowed local origins.
 
 Phase 1 supports one demo user, one USD account, and predefined categories. Future-dated transactions are rejected. Available balance includes every recorded transaction; month selection changes charts, summary totals, and visible history, not that balance. Starting balance is an opening amount, not a transaction or a dated balance adjustment.
 
-Recurring processing and deterministic forecasts are implemented. Next is Phase 2D, an interactive bill calendar, with continued calculation accuracy and regression testing. After those browser features, implement automatic local backups and verified restoration, then evaluate desktop packaging. Keep forecasts separate from posted transactions and support safe catch-up after the app has been closed. Cloud/AWS deployment and public exposure are excluded from the permanent architecture. Local application security should fit one MacBook and must not require hosted authentication.
+Recurring processing and deterministic forecasts are implemented. Phase 2D adds the interactive bill calendar. Continue calculation accuracy and regression testing. Phase 2E now adds automatic local backups and verified isolated restoration; continue recovery/offline acceptance before evaluating desktop packaging. Keep forecasts separate from posted transactions and support safe catch-up after the app has been closed. Cloud/AWS deployment and public exposure are excluded from the permanent architecture. Local application security should fit one MacBook and must not require hosted authentication.
 
 See [architecture](docs/architecture.md), [API examples](docs/api.md), and [database migration/recovery](docs/database-migration.md).
 

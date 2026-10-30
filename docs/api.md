@@ -53,3 +53,22 @@ See [full contracts and recurrence semantics](recurring-transactions.md#api).
 ## Forecasts and plans (Phase 2C)
 
 `GET /forecasts`, `/forecasts/monthly`, and `/forecasts/daily/{date}` expose deterministic read-only projections. `POST /forecasts/scenarios` returns baseline/scenario comparison without saving it. `GET/PUT /forecast-preferences` reads defaults or explicitly saves a versioned threshold. `/planned-transactions` supports list/create, versioned PUT edits, POST `/{id}/cancel`, and explicit POST `/{id}/complete` RECORD/LINK/HANDLED actions. These response monetary values are exact decimal strings. See [full contracts and completion semantics](balance-forecast.md#api).
+
+## Bill Calendar (Phase 2D)
+
+`GET /api/calendar?month=YYYY-MM` returns a read-only selected-month composition of the existing forecast days/flows/warnings, recorded activity, and plan/occurrence status markers. The default is the shared business clock's current month. Past balances are null with an explanation; all money is decimal strings. Existing plan/recurring/transaction mutations are reused unchanged. See [response contract and non-double-counting rules](bill-calendar.md#implementation-and-api).
+
+## Backup & Recovery (Phase 2E)
+
+| Method | Path | Result |
+|---|---|---|
+| GET | `/api/backups` | Private operation metadata, schedule, history, disk/SSD status; no financial payload |
+| PUT | `/api/backups/settings` | Versioned schedule/retention/external-directory settings |
+| POST | `/api/backups` | 202 asynchronous native backup |
+| POST | `/api/backups/{id}/verify` | 202 checksum/decoding/compatibility validation |
+| POST | `/api/backups/{id}/restore-test` | 202 confirmed protected-copy restore, after current safety backup; `{ "confirmed": true }` |
+| POST | `/api/backups/external-copy` | 202 verified copies to configured available SSD |
+| POST | `/api/backups/exports` | 202 prepare `{ "format": "json" }` or `"csv"` bundle |
+| GET | `/api/backups/exports/{prepared-id}` | Explicit private JSON/ZIP download with no-store |
+
+Concurrent operations return 409 or report the standalone lock conflict; settings edits use the current version. Database/tool/credential locations cannot be changed through these APIs. Unknown/unsafe IDs/formats/fields are rejected. Live database replacement is unavailable. See [complete recovery and security semantics](backup-recovery.md).
