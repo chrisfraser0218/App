@@ -9,6 +9,7 @@ import {
 } from "./api";
 import { localDate, money, validMoney } from "./finance";
 
+import SpendingInsights from "./components/SpendingInsights";
 import BackupRecovery from "./components/BackupRecovery";
 import BillCalendar from "./components/BillCalendar";
 import BalanceForecast from "./components/BalanceForecast";
@@ -22,17 +23,19 @@ import DashboardCharts from "./components/DashboardCharts";
 
 export default function App() {
   const [page, setPage] = useState(
-    location.hash === "#settings"
-      ? "settings"
-      : location.hash === "#calendar"
-        ? "calendar"
-        : location.hash === "#forecast"
-          ? "forecast"
-          : location.hash.startsWith("#recurring")
-            ? "recurring"
-            : location.hash === "#transactions"
-              ? "transactions"
-              : "dashboard",
+    location.hash === "#insights"
+      ? "insights"
+      : location.hash === "#settings"
+        ? "settings"
+        : location.hash === "#calendar"
+          ? "calendar"
+          : location.hash === "#forecast"
+            ? "forecast"
+            : location.hash.startsWith("#recurring")
+              ? "recurring"
+              : location.hash === "#transactions"
+                ? "transactions"
+                : "dashboard",
   );
   const [focusedRule, setFocusedRule] = useState(location.hash.split("/")[1]);
   const [dark, setDark] = useState(
@@ -66,17 +69,19 @@ export default function App() {
     const handle = () => {
       setFocusedRule(location.hash.split("/")[1]);
       setPage(
-        location.hash === "#settings"
-          ? "settings"
-          : location.hash === "#calendar"
-            ? "calendar"
-            : location.hash === "#forecast"
-              ? "forecast"
-              : location.hash.startsWith("#recurring")
-                ? "recurring"
-                : location.hash === "#transactions"
-                  ? "transactions"
-                  : "dashboard",
+        location.hash === "#insights"
+          ? "insights"
+          : location.hash === "#settings"
+            ? "settings"
+            : location.hash === "#calendar"
+              ? "calendar"
+              : location.hash === "#forecast"
+                ? "forecast"
+                : location.hash.startsWith("#recurring")
+                  ? "recurring"
+                  : location.hash === "#transactions"
+                    ? "transactions"
+                    : "dashboard",
       );
     };
     window.addEventListener("hashchange", handle);
@@ -117,7 +122,12 @@ export default function App() {
     const refresh = async () => {
       if (document.visibilityState !== "visible" || page === "settings") return;
       try {
-        if (page !== "forecast" && page !== "calendar" && page !== "settings")
+        if (
+          page !== "forecast" &&
+          page !== "calendar" &&
+          page !== "settings" &&
+          page !== "insights"
+        )
           await request("/recurring-transactions/process-due", {
             method: "POST",
           });
@@ -274,6 +284,14 @@ export default function App() {
             <Icon name="wallet" />
             Settings
           </a>
+          <a
+            href="#insights"
+            className={page === "insights" ? "active" : ""}
+            aria-current={page === "insights" ? "page" : undefined}
+          >
+            <Icon name="up" />
+            Spending Insights
+          </a>
         </nav>
         <div className="sidebar-bottom">
           <div className="demo-note">
@@ -304,13 +322,15 @@ export default function App() {
                 ? "Overview"
                 : page === "recurring"
                   ? "Recurring Transactions"
-                  : page === "settings"
-                    ? "Settings"
-                    : page === "calendar"
-                      ? "Bill Calendar"
-                      : page === "forecast"
-                        ? "Balance Forecast"
-                        : "Transactions"}
+                  : page === "insights"
+                    ? "Spending Insights"
+                    : page === "settings"
+                      ? "Settings"
+                      : page === "calendar"
+                        ? "Bill Calendar"
+                        : page === "forecast"
+                          ? "Balance Forecast"
+                          : "Transactions"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -337,26 +357,30 @@ export default function App() {
                   ? "Financial overview"
                   : page === "recurring"
                     ? "Recurring Transactions"
-                    : page === "settings"
-                      ? "Backup & Recovery"
-                      : page === "calendar"
-                        ? "Bill Calendar"
-                        : page === "forecast"
-                          ? "Balance Forecast"
-                          : "Transactions"}
+                    : page === "insights"
+                      ? "Spending Insights"
+                      : page === "settings"
+                        ? "Backup & Recovery"
+                        : page === "calendar"
+                          ? "Bill Calendar"
+                          : page === "forecast"
+                            ? "Balance Forecast"
+                            : "Transactions"}
               </h1>
               <p>
                 {page === "dashboard"
                   ? "A clear picture of where you are. A better sense of what’s next."
                   : page === "recurring"
                     ? "Rent, subscriptions, insurance, and paychecks — handled locally."
-                    : page === "settings"
-                      ? "Local backups, verification, and safe recovery."
-                      : page === "calendar"
-                        ? "Your bills, plans, and projected balances, day by day."
-                        : page === "forecast"
-                          ? "See what’s ahead with exact scheduled dates and your own plans."
-                          : "Every little detail, all in one place."}
+                    : page === "insights"
+                      ? "Understand recorded spending with local, evidence-based analysis."
+                      : page === "settings"
+                        ? "Local backups, verification, and safe recovery."
+                        : page === "calendar"
+                          ? "Your bills, plans, and projected balances, day by day."
+                          : page === "forecast"
+                            ? "See what’s ahead with exact scheduled dates and your own plans."
+                            : "Every little detail, all in one place."}
               </p>
             </div>
             <button
@@ -378,7 +402,8 @@ export default function App() {
             {page !== "recurring" &&
               page !== "forecast" &&
               page !== "calendar" &&
-              page !== "settings" && (
+              page !== "settings" &&
+              page !== "insights" && (
                 <label className="month-control">
                   <span className="sr-only">Selected month</span>
                   <input
@@ -400,7 +425,9 @@ export default function App() {
               {notice}
             </div>
           )}
-          {page === "settings" ? (
+          {page === "insights" ? (
+            <SpendingInsights transactions={data?.transactions} />
+          ) : page === "settings" ? (
             <BackupRecovery />
           ) : error ? (
             <div className="error-panel" role="alert">
@@ -466,7 +493,8 @@ export default function App() {
                 {page !== "recurring" &&
                   page !== "forecast" &&
                   page !== "calendar" &&
-                  page !== "settings" && (
+                  page !== "settings" &&
+                  page !== "insights" && (
                     <section className="panel transactions-panel">
                       <div className="panel-heading">
                         <div>
@@ -528,7 +556,7 @@ export default function App() {
                 <div className="bottom-note">
                   <span className="status-dot" />
                   Your data stays in your local PostgreSQL database.
-                  <span>FinSight AI · Phase 2E</span>
+                  <span>FinSight AI · Phase 3</span>
                 </div>
               </>
             )

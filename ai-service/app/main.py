@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from fastapi import FastAPI, Request
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 from .model import Categorizer
+from .spending import SpendingRequest, SpendingResponse, analyze
 
 DEFAULT_MODEL = Path(__file__).resolve().parents[1] / "artifacts" / "category-model.joblib"
 
@@ -38,6 +39,10 @@ def create_app(model_path: Path | None = None) -> FastAPI:
     def predict(payload: PredictionRequest, request: Request):
         # Amount is validated for a consistent API but v1 features use description only.
         return request.app.state.categorizer.predict(payload.description)
+
+    @app.post("/analyze-spending", response_model=SpendingResponse)
+    def spending(payload: SpendingRequest):
+        return analyze(payload)
 
     return app
 

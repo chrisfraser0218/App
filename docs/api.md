@@ -72,3 +72,7 @@ See [full contracts and recurrence semantics](recurring-transactions.md#api).
 | GET | `/api/backups/exports/{prepared-id}` | Explicit private JSON/ZIP download with no-store |
 
 Concurrent operations return 409 or report the standalone lock conflict; settings edits use the current version. Database/tool/credential locations cannot be changed through these APIs. Unknown/unsafe IDs/formats/fields are rejected. Live database replacement is unavailable. See [complete recovery and security semantics](backup-recovery.md).
+
+## Spending Insights (Phase 3)
+
+`GET /api/insights?range=this_month` composes spending summaries, category comparisons, monthly trends, optional unusual-expense alerts, recurring analysis and classified evidence-backed insight cards in one consistent read-only snapshot. Ranges: `this_month`, `last_month`, `last_3`, `last_6`, `last_12`, or `custom&from=YYYY-MM-DD&to=YYYY-MM-DD`. `GET /api/insights/transactions?from=YYYY-MM-DD&to=YYYY-MM-DD&categoryId=UUID` returns owned expense drill-down rows/counts. All financial values are decimal strings. The existing local Python service adds internal `POST /analyze-spending`; it has no database access. See [contracts, formulas, evidence validation and bounds](spending-insights.md).

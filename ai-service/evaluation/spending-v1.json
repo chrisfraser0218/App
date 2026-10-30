@@ -1,0 +1,100 @@
+{
+  "dataset": "synthetic-controlled-v1",
+  "seed": 1303,
+  "runtime_method": "causal-robust-mad-v1",
+  "overall": {
+    "cases": 240,
+    "true_positive": 61,
+    "false_positive": 0,
+    "false_negative": 59,
+    "true_negative": 120,
+    "precision": 1.0,
+    "recall": 0.5083333333333333,
+    "false_positive_rate": 0.0
+  },
+  "by_regime": {
+    "steady": {
+      "cases": 40,
+      "true_positive": 20,
+      "false_positive": 0,
+      "false_negative": 0,
+      "true_negative": 20,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "coverage": 1.0
+    },
+    "flat": {
+      "cases": 40,
+      "true_positive": 20,
+      "false_positive": 0,
+      "false_negative": 0,
+      "true_negative": 20,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "coverage": 1.0
+    },
+    "limited": {
+      "cases": 40,
+      "true_positive": 0,
+      "false_positive": 0,
+      "false_negative": 20,
+      "true_negative": 20,
+      "precision": null,
+      "recall": 0.0,
+      "false_positive_rate": 0.0,
+      "coverage": 0.0
+    },
+    "uneven": {
+      "cases": 40,
+      "true_positive": 1,
+      "false_positive": 0,
+      "false_negative": 19,
+      "true_negative": 20,
+      "precision": 1.0,
+      "recall": 0.05,
+      "false_positive_rate": 0.0,
+      "coverage": 1.0
+    },
+    "small_amount": {
+      "cases": 40,
+      "true_positive": 0,
+      "false_positive": 0,
+      "false_negative": 20,
+      "true_negative": 20,
+      "precision": null,
+      "recall": 0.0,
+      "false_positive_rate": 0.0,
+      "coverage": 1.0
+    },
+    "rich_history": {
+      "cases": 40,
+      "true_positive": 20,
+      "false_positive": 0,
+      "false_negative": 0,
+      "true_negative": 20,
+      "precision": 1.0,
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "coverage": 1.0
+    }
+  },
+  "offline_isolation_forest_rich_history": {
+    "cases": 40,
+    "true_positive": 18,
+    "false_positive": 3,
+    "false_negative": 2,
+    "true_negative": 17,
+    "precision": 0.8571428571428571,
+    "recall": 0.9,
+    "false_positive_rate": 0.15,
+    "coverage": 1.0
+  },
+  "limitations": [
+    "Synthetic labels are constructed expectations, not verified fraud or real-world ground truth.",
+    "Fixed thresholds intentionally abstain on limited data and miss small-dollar/uneven spikes.",
+    "One-dimensional Isolation Forest comparison is a limited synthetic benchmark, not evidence for production superiority.",
+    "No personal-data training, online retraining, probability calibration or real-world accuracy claim."
+  ]
+}

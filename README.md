@@ -2,7 +2,7 @@
 
 A personal finance workspace built with React, TypeScript, Java 21, Spring Boot, and PostgreSQL. Phase 1 delivers a functional local demo: record income and expenses, set an opening balance, and understand spending through interactive charts.
 
-**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. Phase 2D adds the interactive Bill Calendar. An AI assistant remains future work.
+**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. Phase 2D adds the interactive Bill Calendar. Phase 3 adds read-only Spending Insights with optional local statistical anomaly detection. An AI assistant remains future work.
 
 ![FinSight AI financial dashboard in light mode](docs/screenshots/dashboard-light.png)
 
@@ -241,3 +241,9 @@ The repeated synthetic model evaluation remained 45/45 classifications, with 43/
 ## Phase 2B verification
 
 Executed: **62 backend tests on both H2 and isolated PostgreSQL 15**, **27 frontend tests**, and **27 AI service tests**; backend and frontend production builds passed. Synthetic browser checks verified the new UI, explicit manual reconciliation, AI suggestions/overrides, unchanged legacy flows, mobile/dark mode, draft preservation during background refresh, and startup catch-up across service restarts without duplicates. Personal records were not used as test fixtures. V3 was applied only after a fully restore-verified backup; existing financial table fingerprints, exact balances, and PostgreSQL configuration remained unchanged. See the [Phase 2B report](docs/recurring-transactions.md).
+
+## Phase 3: Spending Insights
+
+Open [Spending Insights](http://127.0.0.1:5173/#insights) for exact recorded spending/income/net summaries, date-filtered category/monthly charts, evidence-backed observations, conservative local anomaly detection, and recurring analysis with separately labelled normalized estimates and exact pending totals. Insights do not write financial records; deterministic summaries remain available without Python. No schema migration or new dependency is required.
+
+See [methods, APIs, controlled evaluation, tests and limitations](docs/spending-insights.md). The synthetic 240-case MAD benchmark measured 100% precision, 50.83% recall and 0% false-positive rate; limited history abstains and uneven/small-dollar cases are frequently missed. These figures do not measure real-world accuracy. Existing local startup, categorization model training and backup/recovery instructions remain unchanged. Phase 4, savings goals and desktop packaging are deferred.
