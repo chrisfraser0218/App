@@ -7,13 +7,18 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 @Component
+@org.springframework.context.annotation.Profile("test")
 class DemoData implements ApplicationRunner {
     private final JdbcTemplate jdbc;
     DemoData(JdbcTemplate jdbc) { this.jdbc = jdbc; }
     @Override @Transactional public void run(ApplicationArguments args) {
         // Account existence marks initial setup. Never recreate deleted demo transactions on restart.
-        if (jdbc.queryForObject("SELECT COUNT(*) FROM accounts WHERE id = ?", Integer.class, DemoIdentity.ACCOUNT_ID) > 0) return;
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM accounts WHERE id = ?", Integer.class, DemoIdentity.ACCOUNT_ID) > 0) {
+            jdbc.update("UPDATE users SET username='legacy_fixture',password_hash=? WHERE id=? AND username IS NULL",LocalPasswords.encode("Synthetic fixture password"),DemoIdentity.USER_ID);
+            return;
+        }
         jdbc.update("INSERT INTO users (id,email,display_name) VALUES (?,?,?)", DemoIdentity.USER_ID, "demo@finsight.local", "Alex Morgan (Demo)");
+        jdbc.update("UPDATE users SET username='legacy_fixture',password_hash=? WHERE id=?",LocalPasswords.encode("Synthetic fixture password"),DemoIdentity.USER_ID);
         jdbc.update("INSERT INTO accounts (id,user_id,name,currency,starting_balance) VALUES (?,?,?,?,?)", DemoIdentity.ACCOUNT_ID, DemoIdentity.USER_ID, "Everyday account", "USD", new BigDecimal("2500.00"));
         String[] names = {"Salary", "Freelance", "Housing", "Groceries", "Dining", "Transport", "Shopping", "Subscriptions", "Health", "Other", "Utilities"};
         List<UUID> ids = new ArrayList<>();

@@ -26,7 +26,8 @@
     const method=(init.method||request?.method||'GET').toUpperCase();
     const body=init.body!==undefined?init.body:(request&&!['GET','HEAD'].includes(method)?await request.clone().text():null);
     if(body!==null&&typeof body!=='string')throw new TypeError('Only JSON local requests are supported');
-    return send({action:'api',path:url.pathname+url.search,method,body},init.signal||request?.signal);
+    const csrf=new Headers(init.headers||request?.headers).get('X-CSRF-TOKEN');
+    return send({action:'api',path:url.pathname+url.search,method,body,csrf},init.signal||request?.signal);
   };
   window.finsightDesktop={chooseBackupDirectory:()=>send({action:'directory'})};
   const originalSet=Storage.prototype.setItem;

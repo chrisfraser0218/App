@@ -13,6 +13,10 @@ class FinanceController {
     private final FinanceService service;
     FinanceController(FinanceService service) { this.service = service; }
     @GetMapping("/categories") List<CategoryView> categories() { return service.categories(); }
+    record CategoryInput(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=60) String name,
+                         @jakarta.validation.constraints.NotNull TransactionType type) {}
+    @PostMapping("/categories") @ResponseStatus(HttpStatus.CREATED)
+    CategoryView category(@Valid @RequestBody CategoryInput input) { return service.createCategory(input.name(),input.type()); }
     @GetMapping("/account") AccountView account() { return service.account(); }
     @PutMapping("/account/starting-balance") AccountView balance(@Valid @RequestBody BalanceInput input) { return service.setBalance(input); }
     @GetMapping("/transactions") List<TransactionView> list() { return service.list(); }

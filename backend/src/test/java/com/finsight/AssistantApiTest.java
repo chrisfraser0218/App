@@ -19,8 +19,9 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+@org.junit.jupiter.api.extension.ExtendWith(LegacyIdentityExtension.class)
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
-@ContextConfiguration(initializers=IsolatedDatabaseGuard.class) @Import(RecurringApiTest.TestClockConfig.class)
+@ContextConfiguration(initializers=IsolatedDatabaseGuard.class) @Import({LegacyTestSupport.class, RecurringApiTest.TestClockConfig.class})
 class AssistantApiTest {
  @Autowired AssistantService assistant;@Autowired RecurringApiTest.MutableClock clock;@Autowired JdbcTemplate jdbc;@Autowired MockMvc mvc;@Autowired ObjectMapper json;@Autowired FinanceService finance;@Autowired ForecastService forecast;@Autowired CalendarService calendar;@Autowired RecurringRuleService rules;@Autowired PlannedTransactionService plans;
  @MockBean SpendingAiClient ai;

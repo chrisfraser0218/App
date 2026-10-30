@@ -9,6 +9,7 @@ import {
 } from "./api";
 import { localDate, money, validMoney } from "./finance";
 
+import CategorySetup from "./components/CategorySetup";
 import SavingsGoals from "./components/SavingsGoals";
 import SavingsAllocation from "./components/SavingsAllocation";
 import FinancialAssistant from "./components/FinancialAssistant";
@@ -24,7 +25,7 @@ import TransactionTable from "./components/TransactionTable";
 import SummaryCards from "./components/SummaryCards";
 import DashboardCharts from "./components/DashboardCharts";
 
-export default function App() {
+export default function App({username, onLogout}: {username: string; onLogout: () => Promise<void>}) {
   const [page, setPage] = useState(
     location.hash === "#savings"
       ? "savings"
@@ -323,22 +324,9 @@ export default function App() {
           </a>
         </nav>
         <div className="sidebar-bottom">
-          <div className="demo-note">
-            <span className="status-dot" />
-            <strong>Your local demo</strong>
-            <p>
-              A space to explore your finances.
-              <br />
-              Sample data. Real functionality.
-            </p>
-          </div>
           <div className="profile">
-            <span className="avatar">AM</span>
-            <div>
-              <strong>Alex Morgan</strong>
-              <small>Demo account</small>
-            </div>
-            <span className="profile-dot" />
+            <span className="avatar">{username.slice(0,2).toUpperCase()}</span>
+            <div><strong>{username}</strong><small>Private local account</small></div>
           </div>
         </div>
       </aside>
@@ -369,7 +357,7 @@ export default function App() {
           <div className="topbar-right">
             <span className="demo-pill">
               <span className="status-dot" />
-              Local demo
+              Local account
             </span>
             <button
               className="icon-button theme-button"
@@ -378,7 +366,8 @@ export default function App() {
             >
               <Icon name={dark ? "sun" : "moon"} />
             </button>
-            <span className="avatar small">AM</span>
+            <span className="avatar small" aria-label={`Signed in as ${username}`}>{username.slice(0,2).toUpperCase()}</span>
+            <button className="secondary logout-button" onClick={() => void onLogout().catch(e => setError((e as Error).message))}>Log out</button>
           </div>
         </header>
         <main>
@@ -501,6 +490,7 @@ export default function App() {
               <>
                 {page === "dashboard" && (
                   <>
+                    <CategorySetup onCreated={() => void load(true)} />
                     <SummaryCards
                       account={data.account}
                       summary={monthly!}

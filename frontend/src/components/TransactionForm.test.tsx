@@ -1,4 +1,11 @@
 // @vitest-environment jsdom
+import { beforeEach as beforeCsrf } from 'vitest';
+import { clearCsrf, prepareCsrf } from '../api';
+beforeCsrf(async () => {
+  const original=globalThis.fetch;
+  globalThis.fetch=async () => new Response(JSON.stringify({token:'synthetic-csrf'}),{status:200});
+  clearCsrf(); await prepareCsrf(); globalThis.fetch=original;
+});
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   act,

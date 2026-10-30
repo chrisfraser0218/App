@@ -1,4 +1,11 @@
 // @vitest-environment jsdom
+import { beforeEach as beforeCsrf } from 'vitest';
+import { clearCsrf, prepareCsrf } from '../api';
+beforeCsrf(async () => {
+  const original=globalThis.fetch;
+  globalThis.fetch=async () => new Response(JSON.stringify({token:'synthetic-csrf'}),{status:200});
+  clearCsrf(); await prepareCsrf(); globalThis.fetch=original;
+});
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import {
   render,
@@ -228,7 +235,7 @@ it("shows backup failures and retries status", async () => {
 });
 it("keeps Settings available when financial database reads fail", async () => {
   window.location.hash = "#settings";
-  render(<App />);
+  render(<App username="Synthetic" onLogout={async () => {}} />);
   expect(
     await screen.findByRole("button", { name: "Backup Now" }),
   ).toBeTruthy();

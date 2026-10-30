@@ -15,6 +15,8 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+@org.springframework.context.annotation.Import(LegacyTestSupport.class)
+@org.junit.jupiter.api.extension.ExtendWith(LegacyIdentityExtension.class)
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
 @org.springframework.test.context.ContextConfiguration(initializers = IsolatedDatabaseGuard.class) @Transactional
 class FinanceApiTest {

@@ -62,7 +62,7 @@ class CalendarService {
                     "MANUAL".equals(r.getString("resolution")) ? "RECONCILED" : "COMPLETED",
                     r.getObject("occurrence_date", LocalDate.class), r.getObject("rule_id", UUID.class), r.getObject("plan_id", UUID.class),
                     r.getObject("id", UUID.class), false, "Already included in actual balance; not added to projected flow again."));
-            }, DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID, from, to);
+            }, CurrentIdentity.userId(), CurrentIdentity.accountId(), from, to);
         // Completion/cancellation intentions stay visible on their original planned dates, without counting cash twice.
         jdbc.query("""
             SELECT p.*,c.name AS category,t.transaction_date AS recorded_date
@@ -83,7 +83,7 @@ class CalendarService {
                 add(entries, date, new Entry("plan:" + r.getString("id"), r.getString("description"), r.getBigDecimal("amount").toPlainString(),
                     TransactionType.valueOf(r.getString("type")), r.getString("category"), "PLANNED", status, date, null,
                     r.getObject("id", UUID.class), r.getObject("transaction_id", UUID.class), false, note));
-            }, DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID, from, to);
+            }, CurrentIdentity.userId(), CurrentIdentity.accountId(), from, to);
         // Retain handled/deleted receipts and early/manual links on the scheduled date, without recreating an occurrence.
         jdbc.query("""
             SELECT o.*,t.transaction_date AS recorded_date,t.description,t.amount,t.type,c.name AS category
@@ -104,7 +104,7 @@ class CalendarService {
                     r.getObject("transaction_id", UUID.class), false, recorded == null ?
                     "Permanent receipt; original amount/category was not retained. No payment will be recreated." :
                     "Already recorded on " + recorded + "; not counted again on the scheduled date."));
-            }, DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID, from, to);
+            }, CurrentIdentity.userId(), CurrentIdentity.accountId(), from, to);
         List<Day> days = new ArrayList<>();
         for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
             var items = entries.getOrDefault(date, List.of()).stream().sorted(Comparator.comparing(Entry::projected).reversed()

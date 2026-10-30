@@ -20,9 +20,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(LegacyIdentityExtension.class)
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
 @ContextConfiguration(initializers=IsolatedDatabaseGuard.class)
-@Import(RecurringApiTest.TestClockConfig.class)
+@Import({LegacyTestSupport.class, RecurringApiTest.TestClockConfig.class})
 class CalendarApiTest {
     @Autowired RecurringApiTest.MutableClock clock;
     @Autowired CalendarService calendar;

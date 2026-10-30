@@ -15,12 +15,47 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 @Configuration
 class SecurityConfig {
-    @Bean SecurityFilterChain security(HttpSecurity http, @Value("${desktop.enabled:false}") boolean desktop, @Value("${desktop.session-token:}") String token, @Value("${desktop.read-only:false}") boolean readOnly) throws Exception {
-        // No cookies or authenticated sessions in this local demo. Require JSON for mutations.
-        return http.csrf(c -> c.disable()).cors(c -> c.disable())
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(a -> { a.requestMatchers("/api/**").permitAll(); if(desktop)a.requestMatchers(HttpMethod.GET,"/","/index.html","/assets/**","/favicon.svg").permitAll(); a.anyRequest().denyAll(); })
-            .addFilterBefore(new LocalRequestFilter(desktop,token,readOnly), AnonymousAuthenticationFilter.class).build();
+    @Bean SecurityFilterChain security(HttpSecurity http, AuthenticationService authentication,
+            @Value("${desktop.enabled:false}") boolean desktop, @Value("${desktop.session-token:}") String token,
+            @Value("${desktop.read-only:false}") boolean readOnly, @Value("${authentication.attempts-per-minute:30}") int limit) throws Exception {
+        return http.cors(c -> c.disable())
+            .csrf(c -> c.csrfTokenRepository(new org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository()))
+            .requestCache(c -> c.disable()).logout(c -> c.disable())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .exceptionHandling(e -> e.authenticationEntryPoint((req,res,ex) -> res.sendError(401))
+                .accessDeniedHandler((req,res,ex) -> res.sendError(403)))
+            .authorizeHttpRequests(a -> {
+                a.requestMatchers(HttpMethod.GET,"/api/auth/csrf","/api/desktop/health").permitAll();
+                a.requestMatchers(HttpMethod.POST,"/api/auth/register","/api/auth/login").permitAll();
+                a.requestMatchers("/api/**").authenticated();
+                if(desktop)a.requestMatchers(HttpMethod.GET,"/","/index.html","/assets/**","/favicon.svg").permitAll();
+                a.anyRequest().denyAll();
+            })
+            .addFilterBefore(new LocalRequestFilter(desktop,token,readOnly), org.springframework.security.web.csrf.CsrfFilter.class)
+            .addFilterAfter(new SessionValidationFilter(authentication,limit), AnonymousAuthenticationFilter.class)
+            .build();
+    }
+    static class SessionValidationFilter extends OncePerRequestFilter {
+        private final AuthenticationService service;
+        private long window; private int attempts; private final int limit;
+        SessionValidationFilter(AuthenticationService service,int limit) { this.service=service;this.limit=Math.max(1,Math.min(limit,500)); }
+        private synchronized boolean limited() {
+            long now=System.currentTimeMillis();
+            if(now-window>=60_000){window=now;attempts=0;}
+            return ++attempts>limit;
+        }
+        @Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain) throws ServletException,IOException {
+            var auth=org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if(auth!=null && auth.getPrincipal() instanceof CurrentIdentity.Owner owner && !service.valid(owner)) {
+                var session=req.getSession(false);if(session!=null)session.invalidate();
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+                res.sendError(401);return;
+            }
+            if("POST".equals(req.getMethod()) && Set.of("/api/auth/login","/api/auth/register").contains(req.getRequestURI()) && limited()) {
+                res.setHeader("Retry-After","60");res.sendError(429);return;
+            }
+            chain.doFilter(req,res);
+        }
     }
     static class LocalRequestFilter extends OncePerRequestFilter {
         private final boolean desktop,readOnly;
@@ -33,11 +68,12 @@ class SecurityConfig {
         private static final Set<String> HOSTS = Set.of("localhost", "127.0.0.1", "[::1]");
         private static final Set<String> ORIGINS = Set.of("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080", "http://127.0.0.1:8080");
         @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
+            if(req.getContentLengthLong()>1024*1024){res.sendError(413);return;}
             boolean api=req.getRequestURI().startsWith("/api/");
             if(desktop&&api){
                 String supplied=req.getHeader("X-FinSight-Session");
                 if(supplied==null||!MessageDigest.isEqual(token,supplied.getBytes(StandardCharsets.UTF_8))){res.sendError(403);return;}
-                if(readOnly&&!Set.of("GET","HEAD").contains(req.getMethod())&&!Set.of("/api/assistant/questions","/api/forecasts/scenarios").contains(req.getRequestURI())){res.sendError(403);return;}
+                if(readOnly&&!Set.of("GET","HEAD").contains(req.getMethod())&&!Set.of("/api/assistant/questions","/api/forecasts/scenarios","/api/auth/login","/api/auth/logout").contains(req.getRequestURI())){res.sendError(403);return;}
             }
             String origin = req.getHeader("Origin");
             boolean desktopOrigin=desktop&&("http://127.0.0.1:"+req.getServerPort()).equals(origin);

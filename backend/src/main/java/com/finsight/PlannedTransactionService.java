@@ -25,17 +25,17 @@ class PlannedTransactionService {
         this.plans=plans;this.accounts=accounts;this.categories=categories;this.transactions=transactions;
         this.finance=finance;this.jdbc=jdbc;this.clock=clock;
     }
-    List<PlanView> list() { return plans.findByUserIdAndAccountIdOrderByPlannedDateAscCreatedAtAsc(DemoIdentity.USER_ID,DemoIdentity.ACCOUNT_ID).stream().map(this::view).toList(); }
+    List<PlanView> list() { return plans.findByUserIdAndAccountIdOrderByPlannedDateAscCreatedAtAsc(CurrentIdentity.userId(),CurrentIdentity.accountId()).stream().map(this::view).toList(); }
     @Transactional PlanView create(PlanInput input) {
-        accounts.lockOwned(DemoIdentity.ACCOUNT_ID,DemoIdentity.USER_ID).orElseThrow(()->error(HttpStatus.NOT_FOUND,"Account not found"));
+        accounts.lockOwned(CurrentIdentity.accountId(),CurrentIdentity.userId()).orElseThrow(()->error(HttpStatus.NOT_FOUND,"Account not found"));
         String fingerprint=hash(input.description().strip(),input.amount().stripTrailingZeros().toPlainString(),input.type(),input.categoryId(),input.date());
-        var previous=plans.findByUserIdAndRequestId(DemoIdentity.USER_ID,input.requestId());
+        var previous=plans.findByUserIdAndRequestId(CurrentIdentity.userId(),input.requestId());
         if(previous.isPresent()) {
             if(!previous.get().creationFingerprint.equals(fingerprint))throw error(HttpStatus.CONFLICT,"Request ID already belongs to a different plan");
             return view(previous.get());
         }
         validate(input);
-        PlannedTransaction p=new PlannedTransaction();p.id=UUID.randomUUID();p.userId=DemoIdentity.USER_ID;p.accountId=DemoIdentity.ACCOUNT_ID;
+        PlannedTransaction p=new PlannedTransaction();p.id=UUID.randomUUID();p.userId=CurrentIdentity.userId();p.accountId=CurrentIdentity.accountId();
         p.requestId=input.requestId();p.creationFingerprint=fingerprint;p.status="PLANNED";p.createdAt=clock.instant();apply(p,input);
         return view(plans.saveAndFlush(p));
     }
@@ -75,11 +75,11 @@ class PlannedTransactionService {
     }
     private void validate(PlanInput input) {
         if(!input.date().isAfter(today())||input.date().getYear()>9999)throw error(HttpStatus.BAD_REQUEST,"Planned date must be after today, within year 9999");
-        var category=categories.findByIdAndUserId(input.categoryId(),DemoIdentity.USER_ID).orElseThrow(()->error(HttpStatus.BAD_REQUEST,"Choose a valid category"));
+        var category=categories.findByIdAndUserId(input.categoryId(),CurrentIdentity.userId()).orElseThrow(()->error(HttpStatus.BAD_REQUEST,"Choose a valid category"));
         if(category.type!=input.type())throw error(HttpStatus.BAD_REQUEST,"Category must match income or expense");
     }
     private void apply(PlannedTransaction p,PlanInput input) { p.description=input.description().strip();p.amount=input.amount();p.type=input.type();p.categoryId=input.categoryId();p.plannedDate=input.date(); }
-    private PlannedTransaction owned(UUID id) {return plans.lockOwned(id,DemoIdentity.USER_ID,DemoIdentity.ACCOUNT_ID).orElseThrow(()->error(HttpStatus.NOT_FOUND,"Planned transaction not found"));}
+    private PlannedTransaction owned(UUID id) {return plans.lockOwned(id,CurrentIdentity.userId(),CurrentIdentity.accountId()).orElseThrow(()->error(HttpStatus.NOT_FOUND,"Planned transaction not found"));}
     private void checkOpen(PlannedTransaction p) {if(!p.status.equals("PLANNED"))throw error(HttpStatus.CONFLICT,"Only open plans can be changed or completed");}
     private void checkVersion(PlannedTransaction p,long version) {if(p.version!=version)throw error(HttpStatus.CONFLICT,"Plan changed. Refresh before trying again");}
     private LocalDate today(){return LocalDate.now(clock);}

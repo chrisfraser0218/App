@@ -39,16 +39,16 @@ class ForecastService {
     }
     Preferences preferences() {
         var rows=jdbc.query("SELECT low_balance_threshold,version FROM forecast_preferences WHERE account_id = ? AND user_id = ?",
-            (r,n)->new Preferences(r.getBigDecimal(1).toPlainString(),r.getLong(2),today(),clock.getZone().toString(),today().plusDays(MAX_DAYS)),DemoIdentity.ACCOUNT_ID,DemoIdentity.USER_ID);
+            (r,n)->new Preferences(r.getBigDecimal(1).toPlainString(),r.getLong(2),today(),clock.getZone().toString(),today().plusDays(MAX_DAYS)),CurrentIdentity.accountId(),CurrentIdentity.userId());
         return rows.isEmpty()?new Preferences("100.00",0,today(),clock.getZone().toString(),today().plusDays(MAX_DAYS)):rows.getFirst();
     }
     @Transactional(readOnly=false,isolation=Isolation.READ_COMMITTED)
     public Preferences savePreferences(PreferenceInput input) {
-        accounts.lockOwned(DemoIdentity.ACCOUNT_ID,DemoIdentity.USER_ID).orElseThrow(()->bad("Account not found"));
+        accounts.lockOwned(CurrentIdentity.accountId(),CurrentIdentity.userId()).orElseThrow(()->bad("Account not found"));
         Preferences current=preferences();
         if(current.version()!=input.version())throw new ResponseStatusException(HttpStatus.CONFLICT,"Preference changed. Refresh and try again");
-        if(current.version()==0)jdbc.update("INSERT INTO forecast_preferences(account_id,user_id,low_balance_threshold,version) VALUES (?,?,?,1)",DemoIdentity.ACCOUNT_ID,DemoIdentity.USER_ID,input.lowBalanceThreshold());
-        else jdbc.update("UPDATE forecast_preferences SET low_balance_threshold=?,version=version+1 WHERE account_id=? AND user_id=?",input.lowBalanceThreshold(),DemoIdentity.ACCOUNT_ID,DemoIdentity.USER_ID);
+        if(current.version()==0)jdbc.update("INSERT INTO forecast_preferences(account_id,user_id,low_balance_threshold,version) VALUES (?,?,?,1)",CurrentIdentity.accountId(),CurrentIdentity.userId(),input.lowBalanceThreshold());
+        else jdbc.update("UPDATE forecast_preferences SET low_balance_threshold=?,version=version+1 WHERE account_id=? AND user_id=?",input.lowBalanceThreshold(),CurrentIdentity.accountId(),CurrentIdentity.userId());
         return preferences();
     }
     Forecast forecast(LocalDate end) {return evaluate(new ScenarioInput(end,null,List.of())).baseline();}
@@ -60,9 +60,9 @@ class ForecastService {
         BigDecimal threshold=input.lowBalanceThreshold()!=null?input.lowBalanceThreshold():new BigDecimal(preferences().lowBalanceThreshold());
         Map<UUID,String> categories=new HashMap<>();for(var c:finance.categories())categories.put(c.id(),c.name());
         Set<String> handled=new HashSet<>();
-        jdbc.query("SELECT rule_id,occurrence_date FROM recurring_occurrences WHERE user_id = ?",r->{handled.add(r.getObject(1,UUID.class)+":"+r.getObject(2,LocalDate.class));},DemoIdentity.USER_ID);
+        jdbc.query("SELECT rule_id,occurrence_date FROM recurring_occurrences WHERE user_id = ?",r->{handled.add(r.getObject(1,UUID.class)+":"+r.getObject(2,LocalDate.class));},CurrentIdentity.userId());
         List<Event> events=new ArrayList<>();
-        for(var rule:rules.findByUserIdAndAccountIdOrderByCreatedAtDesc(DemoIdentity.USER_ID,DemoIdentity.ACCOUNT_ID)) {
+        for(var rule:rules.findByUserIdAndAccountIdOrderByCreatedAtDesc(CurrentIdentity.userId(),CurrentIdentity.accountId())) {
             if(!rule.enabled||rule.archived||rule.nextDate==null)continue;
             // The persisted cursor carries effective edits/resume skips. Never rewind to the original anchor.
             for(LocalDate date=RecurrenceDates.onOrAfter(rule,rule.nextDate);date!=null&&!date.isAfter(end);date=RecurrenceDates.after(rule,date)) {
@@ -70,7 +70,7 @@ class ForecastService {
                 checkSize(events);
             }
         }
-        for(var p:plans.findByUserIdAndAccountIdOrderByPlannedDateAscCreatedAtAsc(DemoIdentity.USER_ID,DemoIdentity.ACCOUNT_ID))
+        for(var p:plans.findByUserIdAndAccountIdOrderByPlannedDateAscCreatedAtAsc(CurrentIdentity.userId(),CurrentIdentity.accountId()))
             if(p.status.equals("PLANNED")&&!p.plannedDate.isAfter(end)) {
                 events.add(event(p.id.toString(),"PLANNED",p.id,p.description,p.type,p.amount,categories.get(p.categoryId),p.plannedDate,asOf));checkSize(events);
             }

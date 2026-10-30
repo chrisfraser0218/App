@@ -41,6 +41,12 @@ class BackupWorker {
         Path base=Path.of(System.getenv().getOrDefault("FINSIGHT_DATA_HOME",System.getProperty("user.home")+"/Library/Application Support/FinSight AI"));
         Path path=base.resolve("backups/managed/exports").resolve(name);
         if(Files.isSymbolicLink(path)||!Files.isRegularFile(path))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Export not found");
+        try {
+            Path ownership=path.resolveSibling(name.substring(0,name.lastIndexOf('.'))+".owner.json");
+            if(Files.isSymbolicLink(ownership)||!Files.isRegularFile(ownership) ||
+                !CurrentIdentity.userId().toString().equals(json.readTree(ownership.toFile()).path("userId").asText()))
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Export not found");
+        } catch(java.io.IOException e) {throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Export not found");}
         return path;
     }
 }

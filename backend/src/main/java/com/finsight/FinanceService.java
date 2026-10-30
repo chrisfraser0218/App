@@ -18,21 +18,28 @@ class FinanceService {
         this.accounts = accounts; this.categories = categories; this.transactions = transactions; this.predictions = predictions; this.jdbc = jdbc;
     }
     private Account accountEntity() {
-        return accounts.findByIdAndUserId(DemoIdentity.ACCOUNT_ID, DemoIdentity.USER_ID)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Demo account not found"));
+        return accounts.findByIdAndUserId(CurrentIdentity.accountId(), CurrentIdentity.userId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
     }
     private List<Transaction> entries() {
-        return transactions.findByUserIdAndAccountIdOrderByTransactionDateDescCreatedAtDescIdDesc(DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID);
+        return transactions.findByUserIdAndAccountIdOrderByTransactionDateDescCreatedAtDescIdDesc(CurrentIdentity.userId(), CurrentIdentity.accountId());
     }
     List<CategoryView> categories() {
-        return categories.findByUserIdOrderByName(DemoIdentity.USER_ID).stream().map(c -> new CategoryView(c.id, c.name, c.type)).toList();
+        return categories.findByUserIdOrderByName(CurrentIdentity.userId()).stream().map(c -> new CategoryView(c.id, c.name, c.type)).toList();
+    }
+    @Transactional
+    CategoryView createCategory(String name,TransactionType type) {
+        UUID id=UUID.randomUUID();
+        try { jdbc.update("INSERT INTO categories(id,user_id,name,type) VALUES (?,?,?,?)",id,CurrentIdentity.userId(),name.strip(),type.name()); }
+        catch(org.springframework.dao.DuplicateKeyException e) {throw new ResponseStatusException(HttpStatus.CONFLICT,"That category already exists");}
+        return new CategoryView(id,name.strip(),type);
     }
     TransactionView get(UUID id) { return view(owned(id)); }
     List<TransactionView> list() {
         Map<UUID, RecurringSource> sources = new HashMap<>();
         jdbc.query("SELECT transaction_id,rule_id,occurrence_date FROM recurring_occurrences WHERE user_id = ? AND transaction_id IS NOT NULL", row -> {
             sources.put(row.getObject("transaction_id", UUID.class), new RecurringSource(row.getObject("rule_id", UUID.class), row.getObject("occurrence_date", LocalDate.class)));
-        }, DemoIdentity.USER_ID);
+        }, CurrentIdentity.userId());
         return entries().stream().map(t -> view(t, sources.get(t.id))).toList();
     }
     AccountView account() {
@@ -48,8 +55,8 @@ class FinanceService {
     @Transactional
     TransactionView create(TransactionInput input) {
         accountEntity();
-        Transaction t = new Transaction(); t.id = UUID.randomUUID(); t.userId = DemoIdentity.USER_ID;
-        t.accountId = DemoIdentity.ACCOUNT_ID; t.createdAt = Instant.now();
+        Transaction t = new Transaction(); t.id = UUID.randomUUID(); t.userId = CurrentIdentity.userId();
+        t.accountId = CurrentIdentity.accountId(); t.createdAt = Instant.now();
         apply(t, input); transactions.saveAndFlush(t); predictions.recordFeedback(input.predictionId(), t); return view(t);
     }
     @Transactional
@@ -59,11 +66,11 @@ class FinanceService {
     @Transactional
     void delete(UUID id) { transactions.delete(owned(id)); }
     private Transaction owned(UUID id) {
-        return transactions.findByIdAndUserIdAndAccountId(id, DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID)
+        return transactions.findByIdAndUserIdAndAccountId(id, CurrentIdentity.userId(), CurrentIdentity.accountId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
     }
     private void apply(Transaction t, TransactionInput input) {
-        Category c = categories.findByIdAndUserId(input.categoryId(), DemoIdentity.USER_ID)
+        Category c = categories.findByIdAndUserId(input.categoryId(), CurrentIdentity.userId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose a valid category"));
         if (c.type != input.type()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category must match transaction type");
         t.description = input.description().strip(); t.amount = input.amount(); t.type = input.type();
@@ -84,7 +91,7 @@ class FinanceService {
     private record RecurringSource(UUID ruleId, LocalDate date) {}
     private TransactionView view(Transaction t) {
         var sources = jdbc.query("SELECT rule_id,occurrence_date FROM recurring_occurrences WHERE transaction_id = ? AND user_id = ?",
-            (row, n) -> new RecurringSource(row.getObject("rule_id", UUID.class), row.getObject("occurrence_date", LocalDate.class)), t.id, DemoIdentity.USER_ID);
+            (row, n) -> new RecurringSource(row.getObject("rule_id", UUID.class), row.getObject("occurrence_date", LocalDate.class)), t.id, CurrentIdentity.userId());
         return view(t, sources.isEmpty() ? null : sources.getFirst());
     }
     private TransactionView view(Transaction t, RecurringSource source) {

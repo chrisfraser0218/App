@@ -381,7 +381,9 @@ class Manager:
             os.rename(partial,target)
         self.add_history({'id':backup_id or 'external-copy','createdAt':self.stamp(),'reason':'external-copy','verification':'external_verified','directory':str(destination)})
         return {'externalVerified':True,'copied':len(ids)}
-    def export(self,format):
+    def export(self,format,user_id=USER_ID):
+        try:user_id=str(uuid.UUID(user_id))
+        except (ValueError,TypeError,AttributeError):raise BackupError('Invalid export owner')
         if format not in ['json','csv']:raise BackupError('Choose JSON or CSV')
         self.check_database();self.require_space(self.exports)
         tables=['accounts','transactions','categories','recurring_rules','recurring_occurrences','planned_transactions','forecast_preferences']
@@ -392,7 +394,7 @@ class Manager:
             if savings_available:tables+=savings_tables
             for table in tables:
                 # Owner selected by server, never an input. Decimal JSON values stay strings in exports.
-                text=self.sql(self.sources[0],f"SELECT COALESCE(json_agg(t ORDER BY to_jsonb(t)::text),'[]'::json) FROM (SELECT * FROM {ident(table)} WHERE user_id='{USER_ID}') t;",snap)
+                text=self.sql(self.sources[0],f"SELECT COALESCE(json_agg(t ORDER BY to_jsonb(t)::text),'[]'::json) FROM (SELECT * FROM {ident(table)} WHERE user_id='{user_id}') t;",snap)
                 values[table]=json.loads(text,parse_float=str)
         export_id='export-'+uuid.uuid4().hex;ext='json' if format=='json' else 'zip';path=self.exports/(export_id+'.'+ext)
         if format=='json':write_json(path,{'formatVersion':1,'createdAt':self.stamp(),'decimalEncoding':'strings','savingsDataAvailable':savings_available,'data':values,'notice':'Data export is not a full PostgreSQL backup.'})
@@ -405,7 +407,8 @@ class Manager:
                     archive.writestr(table+'.csv',out.getvalue())
                 archive.writestr('README.txt','CSV exports are not PostgreSQL backups. Monetary decimals are exact. Spreadsheet formula-like text is prefixed with an apostrophe. Savings allocations, when present, are separate from cash transactions.\n')
             path.chmod(0o600)
-        result={'exportId':export_id+'.'+ext,'bytes':path.stat().st_size,'format':format}
+        write_json(self.exports/(export_id+'.owner.json'),{'userId':user_id})
+        result={'exportId':export_id+'.'+ext,'bytes':path.stat().st_size,'format':format,'userId':user_id}
         self.add_history({'id':result['exportId'],'createdAt':self.stamp(),'reason':'export','verification':'export_prepared',**result})
         return result
     def status(self):
@@ -435,7 +438,7 @@ class Manager:
                     if payload.get('confirmed') is not True:raise BackupError('Explicit confirmation is required for isolated restore verification')
                     result=self.restore_test(payload.get('backupId'))
                 elif action=='external':result=self.copy_external()
-                elif action=='export':result=self.export(payload.get('format'))
+                elif action=='export':result=self.export(payload.get('format'),payload.get('userId',USER_ID))
                 else:raise BackupError('Unknown maintenance operation')
                 op=read_json(self.managed/'operation.json');op.update(state='succeeded',stage='Operation completed',finishedAt=self.stamp(),result=result);write_json(self.managed/'operation.json',op)
                 return result

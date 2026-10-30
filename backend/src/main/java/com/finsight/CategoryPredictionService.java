@@ -34,13 +34,13 @@ class CategoryPredictionService {
         if (prediction.status().equals("suggested")) {
             String name = CATEGORY_NAMES.get(prediction.category());
             if (name == null) return PredictionView.unavailable();
-            category = categories.findByUserIdOrderByName(DemoIdentity.USER_ID).stream()
+            category = categories.findByUserIdOrderByName(CurrentIdentity.userId()).stream()
                 .filter(c -> c.type == TransactionType.EXPENSE && c.name.equals(name)).findFirst().orElse(null);
             if (category == null) return PredictionView.unavailable();
         }
         UUID id = UUID.randomUUID();
         jdbc.update("INSERT INTO category_predictions (id,user_id,description,amount,model_category,suggested_category_id,confidence,model_version,status) VALUES (?,?,?,?,?,?,?,?,?)",
-            id, DemoIdentity.USER_ID, normalized.description(), normalized.amount(), prediction.category(),
+            id, CurrentIdentity.userId(), normalized.description(), normalized.amount(), prediction.category(),
             category == null ? null : category.id, prediction.confidence(), prediction.modelVersion(), prediction.status());
         return new PredictionView(id, prediction.category(), category == null ? null : category.id,
             category == null ? null : category.name, prediction.confidence(), prediction.modelVersion(), prediction.status());
@@ -53,7 +53,7 @@ class CategoryPredictionService {
         List<StoredPrediction> results = jdbc.query(
             "SELECT description, amount, suggested_category_id FROM category_predictions WHERE id = ? AND user_id = ? AND status = 'suggested'",
             (row, n) -> new StoredPrediction(row.getString("description"), row.getBigDecimal("amount"), row.getObject("suggested_category_id", UUID.class)),
-            predictionId, DemoIdentity.USER_ID);
+            predictionId, CurrentIdentity.userId());
         if (results.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prediction not found for this user");
         StoredPrediction p = results.getFirst();
         if (transaction.type != TransactionType.EXPENSE || !transaction.description.equals(p.description())
@@ -63,7 +63,7 @@ class CategoryPredictionService {
         // First submitted decision is immutable. Later edits request a fresh prediction.
         if (jdbc.queryForObject("SELECT COUNT(*) FROM category_prediction_feedback WHERE prediction_id = ?", Integer.class, predictionId) > 0) return;
         jdbc.update("INSERT INTO category_prediction_feedback (prediction_id,user_id,transaction_id,selected_category_id,outcome) VALUES (?,?,?,?,?)",
-            predictionId, DemoIdentity.USER_ID, transaction.id, transaction.categoryId,
+            predictionId, CurrentIdentity.userId(), transaction.id, transaction.categoryId,
             transaction.categoryId.equals(p.categoryId()) ? "accepted" : "corrected");
     }
 
@@ -71,14 +71,14 @@ class CategoryPredictionService {
     public void recordRecurringFeedback(UUID predictionId, RecurringRule rule) {
         if (predictionId == null) return;
         var matches = jdbc.query("SELECT description,amount,suggested_category_id FROM category_predictions WHERE id = ? AND user_id = ? AND status = 'suggested'",
-            (row, n) -> new StoredPrediction(row.getString("description"), row.getBigDecimal("amount"), row.getObject("suggested_category_id", UUID.class)), predictionId, DemoIdentity.USER_ID);
+            (row, n) -> new StoredPrediction(row.getString("description"), row.getBigDecimal("amount"), row.getObject("suggested_category_id", UUID.class)), predictionId, CurrentIdentity.userId());
         if (matches.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prediction not found for this user");
         StoredPrediction prediction = matches.getFirst();
         if (rule.type != TransactionType.EXPENSE || !rule.description.equals(prediction.description()) || rule.amount.compareTo(prediction.amount()) != 0)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prediction no longer matches this schedule");
         if (jdbc.queryForObject("SELECT COUNT(*) FROM recurring_prediction_feedback WHERE prediction_id = ?", Integer.class, predictionId) > 0) return;
         jdbc.update("INSERT INTO recurring_prediction_feedback(prediction_id,user_id,rule_id,selected_category_id,outcome) VALUES (?,?,?,?,?)",
-            predictionId, DemoIdentity.USER_ID, rule.id, rule.categoryId, rule.categoryId.equals(prediction.categoryId()) ? "accepted" : "corrected");
+            predictionId, CurrentIdentity.userId(), rule.id, rule.categoryId, rule.categoryId.equals(prediction.categoryId()) ? "accepted" : "corrected");
     }
 
     private record StoredPrediction(String description, BigDecimal amount, UUID categoryId) {}

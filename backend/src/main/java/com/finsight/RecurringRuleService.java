@@ -32,25 +32,25 @@ class RecurringRuleService {
     LocalDate today() { return LocalDate.now(clock); }
     RuleView get(UUID id) { return view(readOwned(id)); }
     List<RuleView> list() {
-        return rules.findByUserIdAndAccountIdOrderByCreatedAtDesc(DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID).stream().map(this::view).toList();
+        return rules.findByUserIdAndAccountIdOrderByCreatedAtDesc(CurrentIdentity.userId(), CurrentIdentity.accountId()).stream().map(this::view).toList();
     }
-    List<UUID> dueIds() { return rules.dueIds(DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID, today()); }
+    List<UUID> dueIds() { return rules.dueIds(CurrentIdentity.userId(), CurrentIdentity.accountId(), today()); }
 
     @Transactional
     RuleView create(RuleInput input) {
         validate(input);
         // Serialize create requests per account, including retries with the same request ID.
-        accounts.lockOwned(DemoIdentity.ACCOUNT_ID, DemoIdentity.USER_ID).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Account not found"));
+        accounts.lockOwned(CurrentIdentity.accountId(), CurrentIdentity.userId()).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Account not found"));
         String fingerprint = fingerprint(input);
-        var existing = rules.findByUserIdAndRequestId(DemoIdentity.USER_ID, input.requestId());
+        var existing = rules.findByUserIdAndRequestId(CurrentIdentity.userId(), input.requestId());
         if (existing.isPresent()) {
             if (!existing.get().creationFingerprint.equals(fingerprint)) throw error(HttpStatus.CONFLICT, "This request ID was already used for a different schedule");
             return view(existing.get());
         }
         if (input.enabled() && input.startDate().isBefore(today()) && !input.backfillConfirmed())
             throw error(HttpStatus.BAD_REQUEST, "Confirm posting all due occurrences from the past start date");
-        RecurringRule r = new RecurringRule(); r.id = UUID.randomUUID(); r.userId = DemoIdentity.USER_ID;
-        r.accountId = DemoIdentity.ACCOUNT_ID; r.frequency = input.frequency(); r.startDate = input.startDate();
+        RecurringRule r = new RecurringRule(); r.id = UUID.randomUUID(); r.userId = CurrentIdentity.userId();
+        r.accountId = CurrentIdentity.accountId(); r.frequency = input.frequency(); r.startDate = input.startDate();
         r.requestId = input.requestId(); r.creationFingerprint = fingerprint; r.createdAt = clock.instant();
         applyFutureFields(r, input); r.enabled = input.enabled(); r.nextDate = RecurrenceDates.onOrAfter(r, r.startDate);
         if (r.endDate != null && r.nextDate != null && r.nextDate.isAfter(r.endDate)) r.nextDate = null;
@@ -131,7 +131,7 @@ class RecurringRuleService {
             (row, n) -> new OccurrenceView(row.getObject("occurrence_date", LocalDate.class),
                 row.getObject("transaction_id") == null && !row.getString("resolution").equals("HANDLED") ? "REMOVED" : row.getString("resolution"),
                 row.getObject("transaction_id", UUID.class), row.getString("description"), row.getBigDecimal("amount"),
-                row.getString("type") == null ? null : TransactionType.valueOf(row.getString("type"))), id, DemoIdentity.USER_ID);
+                row.getString("type") == null ? null : TransactionType.valueOf(row.getString("type"))), id, CurrentIdentity.userId());
     }
     List<OccurrenceView> occurrences(UUID id, LocalDate from, LocalDate to) {
         RecurringRule r = readOwned(id);
@@ -174,7 +174,7 @@ class RecurringRuleService {
         return history(id).stream().filter(o -> o.date().equals(date)).findFirst().orElseThrow();
     }
     private RecurringRule readOwned(UUID id) {
-        return rules.findById(id).filter(r -> r.userId.equals(DemoIdentity.USER_ID) && r.accountId.equals(DemoIdentity.ACCOUNT_ID))
+        return rules.findById(id).filter(r -> r.userId.equals(CurrentIdentity.userId()) && r.accountId.equals(CurrentIdentity.accountId()))
             .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Recurring schedule not found"));
     }
 
@@ -192,7 +192,7 @@ class RecurringRuleService {
             throw error(HttpStatus.BAD_REQUEST, "Payment days apply only to monthly or twice-monthly schedules");
         if (input.frequency() != RecurrenceFrequency.TWICE_MONTHLY && input.secondPaymentDay() != null)
             throw error(HttpStatus.BAD_REQUEST, "A second day applies only to twice-monthly schedules");
-        Category c = categories.findByIdAndUserId(input.categoryId(), DemoIdentity.USER_ID)
+        Category c = categories.findByIdAndUserId(input.categoryId(), CurrentIdentity.userId())
             .orElseThrow(() -> error(HttpStatus.BAD_REQUEST, "Choose a valid category"));
         if (c.type != input.type()) throw error(HttpStatus.BAD_REQUEST, "Category must match transaction type");
     }
@@ -203,7 +203,7 @@ class RecurringRuleService {
         r.paymentDay = input.paymentDay(); r.secondPaymentDay = input.secondPaymentDay();
     }
     private RecurringRule owned(UUID id) {
-        return rules.lockOwned(id, DemoIdentity.USER_ID, DemoIdentity.ACCOUNT_ID)
+        return rules.lockOwned(id, CurrentIdentity.userId(), CurrentIdentity.accountId())
             .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Recurring schedule not found"));
     }
     private void checkVersion(RecurringRule r, long version) {

@@ -21,9 +21,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(LegacyIdentityExtension.class)
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
 @ContextConfiguration(initializers=IsolatedDatabaseGuard.class)
-@Import(RecurringApiTest.TestClockConfig.class)
+@Import({LegacyTestSupport.class, RecurringApiTest.TestClockConfig.class})
 class ForecastApiTest {
     @Autowired RecurringApiTest.MutableClock clock;
     @Autowired ForecastService forecasts;
@@ -120,7 +121,7 @@ class ForecastApiTest {
     @Test void completionRetriesRemainAtomicUnderConcurrentCalls()throws Exception{
         var p=plans.create(input("70","EXPENSE","2026-01-02"));clock.date("2026-01-02");var body=completion(p,CompletionMode.RECORD,null,false);
         try(var executor=Executors.newFixedThreadPool(6)){
-            List<Future<PlanView>> jobs=new ArrayList<>();for(int i=0;i<6;i++)jobs.add(executor.submit(()->plans.complete(p.id(),body)));
+            List<Future<PlanView>> jobs=new ArrayList<>();for(int i=0;i<6;i++)jobs.add(executor.submit(()->LegacyTestSupport.owned(()->plans.complete(p.id(),body))));
             Set<UUID> ids=new HashSet<>();for(var job:jobs)ids.add(job.get(15,TimeUnit.SECONDS).transactionId());assertThat(ids).hasSize(1);
         }
         assertThat(count("transactions")).isEqualTo(1);money(finance.account().balance().toPlainString(),"930");

@@ -95,7 +95,7 @@ class SpendingService {
     }
     private Recurring recurring(List<TransactionView> all,List<TransactionView> expenses,Map<UUID,String> names,Period p) {
         List<RecurringItem> active=new ArrayList<>();
-        for(var r:rules.findByUserIdAndAccountIdOrderByCreatedAtDesc(DemoIdentity.USER_ID,DemoIdentity.ACCOUNT_ID)) {
+        for(var r:rules.findByUserIdAndAccountIdOrderByCreatedAtDesc(CurrentIdentity.userId(),CurrentIdentity.accountId())) {
             if(!r.enabled||r.archived||r.nextDate==null||r.type!=TransactionType.EXPENSE||(r.endDate!=null&&r.endDate.isBefore(p.asOfDate())))continue;
             active.add(new RecurringItem(r.id,r.description,names.getOrDefault(r.categoryId,"Unknown category"),money(r.amount),r.frequency.name(),money(normalize(r.amount,r.frequency)),r.startDate,r.endDate));
         }

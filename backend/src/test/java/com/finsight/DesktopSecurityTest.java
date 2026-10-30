@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+@org.springframework.context.annotation.Import(LegacyTestSupport.class)
+@org.junit.jupiter.api.extension.ExtendWith(LegacyIdentityExtension.class)
 @SpringBootTest(properties={"desktop.enabled=true","desktop.session-token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","desktop.read-only=true","desktop.instance=synthetic-desktop"})
 @AutoConfigureMockMvc @ActiveProfiles("test") @ContextConfiguration(initializers=IsolatedDatabaseGuard.class)
 class DesktopSecurityTest {

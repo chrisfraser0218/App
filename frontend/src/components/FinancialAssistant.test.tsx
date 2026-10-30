@@ -1,4 +1,11 @@
 // @vitest-environment jsdom
+import { beforeEach as beforeCsrf } from 'vitest';
+import { clearCsrf, prepareCsrf } from '../api';
+beforeCsrf(async () => {
+  const original=globalThis.fetch;
+  globalThis.fetch=async () => new Response(JSON.stringify({token:'synthetic-csrf'}),{status:200});
+  clearCsrf(); await prepareCsrf(); globalThis.fetch=original;
+});
 import { afterEach, beforeEach, it, expect, vi } from "vitest";
 import {
   cleanup,
@@ -123,7 +130,7 @@ it("shows loading and prevents concurrent requests", async () => {
     (screen.getByRole("button", { name: "Working…" }) as HTMLButtonElement)
       .disabled,
   ).toBe(true);
-  expect(fetcher).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
 });
 it("shows retryable errors and resends the same question", async () => {
   fetcher.mockRejectedValueOnce(new Error("Local backend unavailable"));
@@ -157,6 +164,7 @@ it("unmount aborts requests and a new mount has no conversation/context", async 
   fetcher.mockReturnValueOnce(new Promise(() => {}));
   const view = render(<FinancialAssistant />);
   send("Spending this month");
+  await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
   view.unmount();
   expect(fetcher.mock.calls[0][1].signal.aborted).toBe(true);
   render(<FinancialAssistant />);

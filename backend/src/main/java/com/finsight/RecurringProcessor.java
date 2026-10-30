@@ -39,12 +39,17 @@ class RecurringProcessor {
 @ConditionalOnProperty(name = "recurring.processing.enabled", havingValue = "true", matchIfMissing = true)
 class RecurringScheduleRunner {
     private final RecurringProcessor processor;
-    RecurringScheduleRunner(RecurringProcessor processor) { this.processor = processor; }
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    RecurringScheduleRunner(RecurringProcessor processor, org.springframework.jdbc.core.JdbcTemplate jdbc) { this.processor = processor; this.jdbc = jdbc; }
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() { tick(); }
     @Scheduled(initialDelayString = "${recurring.poll-delay-ms:30000}", fixedDelayString = "${recurring.poll-delay-ms:30000}")
     public void tick() {
-        try { processor.processDue(); }
+        try {
+            var owners=jdbc.query("SELECT DISTINCT user_id,account_id FROM recurring_rules WHERE enabled=TRUE AND archived=FALSE",
+                (r,n)->new java.util.UUID[]{r.getObject(1,java.util.UUID.class),r.getObject(2,java.util.UUID.class)});
+            for(var owner:owners) CurrentIdentity.processAccount(owner[0],owner[1],()->processor.processDue());
+        }
         catch (RuntimeException ex) { LoggerFactory.getLogger(getClass()).warn("Recurring processing is temporarily unavailable; it will retry."); }
     }
 }

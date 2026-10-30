@@ -88,12 +88,12 @@ def main():
  run('/usr/bin/codesign','--force','--deep','--preserve-metadata=entitlements','--sign','-',py)
  print('Compiling native wrapper with installed Swift tools',flush=True)
  run('/usr/bin/xcrun','swiftc','-O','-target','arm64-apple-macos13.0','-module-cache-path',str(build/'module-cache'),'-framework','AppKit','-framework','WebKit',ROOT/'desktop/Main.swift','-o',contents/'MacOS/FinSightAI')
- run('/usr/bin/xcrun','swift',ROOT/'desktop/Icon.swift',r/'FinSight.icns')
- info={'CFBundleName':'FinSight AI','CFBundleDisplayName':'FinSight AI','CFBundleIdentifier':'com.finsight.local','CFBundleExecutable':'FinSightAI','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.6.0','CFBundleVersion':'6','CFBundleIconFile':'FinSight','LSMinimumSystemVersion':'13.0','NSHighResolutionCapable':True,'NSAppTransportSecurity':{'NSAllowsLocalNetworking':True,'NSExceptionDomains':{'127.0.0.1':{'NSExceptionAllowsInsecureHTTPLoads':True}}}}
+ run('/usr/bin/xcrun','swift','-module-cache-path',str(build/'module-cache'),ROOT/'desktop/Icon.swift',r/'FinSight.icns')
+ info={'CFBundleName':'FinSight AI','CFBundleDisplayName':'FinSight AI','CFBundleIdentifier':'com.finsight.local','CFBundleExecutable':'FinSightAI','CFBundlePackageType':'APPL','CFBundleShortVersionString':'0.6.1','CFBundleVersion':'61','CFBundleIconFile':'FinSight','LSMinimumSystemVersion':'13.0','NSHighResolutionCapable':True,'NSAppTransportSecurity':{'NSAllowsLocalNetworking':True,'NSExceptionDomains':{'127.0.0.1':{'NSExceptionAllowsInsecureHTTPLoads':True}}}}
  (contents/'Info.plist').write_bytes(plistlib.dumps(info))
  critical=['backend.jar','supervisor.py','bridge.js','scripts/backup_manager.py','backup-launcher.sh','frontend/index.html','ai/artifacts/category-model.joblib']
  payload_files={str(p.relative_to(r)):sha(p) for p in r.rglob('*') if p.is_file() and not p.is_symlink() and '_CodeSignature' not in p.parts}
- manifest={'format':1,'version':'0.6.0','architecture':'arm64','postgresMajor':15,'files':{name:sha(r/name) for name in critical},'payloadFiles':payload_files,'runtimeSources':'Existing installed Java 21, CPython 3.11, PostgreSQL 15.17 and application site-packages; no downloads'}
+ manifest={'format':1,'version':'0.6.1','architecture':'arm64','postgresMajor':15,'files':{name:sha(r/name) for name in critical},'payloadFiles':payload_files,'runtimeSources':'Existing installed Java 21, CPython 3.11, PostgreSQL 15.17 and application site-packages; no downloads'}
  manifest['buildId']=hashlib.sha256(json.dumps(manifest,sort_keys=True).encode()).hexdigest()[:20];(r/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
  run('/usr/bin/codesign','--force','--deep','--preserve-metadata=entitlements','--sign','-',app);run('/usr/bin/codesign','--verify','--deep','--strict',app)
  # Validate relocated runtimes with no Homebrew/venv PATH or Python library environment.

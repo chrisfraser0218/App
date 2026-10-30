@@ -1,8 +1,14 @@
 # FinSight AI
 
+## Phase 6B local authentication
+
+FinSight now opens with **Create Account / Log In**. Registration creates a separate, empty USD account at **$0.00**, with no copied demo categories or financial history. Add categories explicitly from the dashboard. Financial APIs require local authenticated sessions; passwords use Argon2id. The preserved legacy/demo book retains every existing record and requires deliberate local credential setup with `python3 scripts/configure-legacy-login.py` before its first authenticated login. No shared demo password is supplied.
+
+See the [Phase 6B completion report](docs/phase6b-completion-report.md) and [account authentication, migration and local credential setup](docs/account-authentication.md) for session/CSRF behavior, desktop integration, backup/export ownership and security limits. Older historical demo instructions below do not authorize unauthenticated access or production reseeding.
+
 A personal finance workspace built with React, TypeScript, Java 21, Spring Boot, and PostgreSQL. Phase 1 delivers a functional local demo: record income and expenses, set an opening balance, and understand spending through interactive charts.
 
-**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. Phase 2D adds the interactive Bill Calendar. Phase 3 adds read-only Spending Insights with optional local statistical anomaly detection. Phase 4 adds a read-only deterministic offline financial assistant; no language model is installed or used.
+**Private local application.** The original demo book is retained behind its own login; new personal logins start empty. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. Phase 2D adds the interactive Bill Calendar. Phase 3 adds read-only Spending Insights with optional local statistical anomaly detection. Phase 4 adds a read-only deterministic offline financial assistant; no language model is installed or used.
 
 ![FinSight AI financial dashboard in light mode](docs/screenshots/dashboard-light.png)
 
@@ -29,7 +35,7 @@ Build output: `desktop/build/FinSight AI.app` and `desktop/build/FinSight AI.dmg
 - Transaction search by description/category, type filtering, and month selection.
 - Loading, empty, validation, success, and retryable error states; accessible labels and native modal dialogs.
 - PostgreSQL persistence, versioned Flyway migration, JPA validation, user-scoped queries, JSON problem responses, and decimal arithmetic.
-- First-run sample data in the current month. Existing records and deletions survive restarts.
+- Existing legacy records and deletions survive restarts. New registrations start empty; only guarded synthetic tests seed sample data.
 
 ## Phase 2A: AI expense categorization
 

@@ -20,9 +20,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(LegacyIdentityExtension.class)
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
 @ContextConfiguration(initializers = IsolatedDatabaseGuard.class)
-@Import(RecurringApiTest.TestClockConfig.class)
+@Import({LegacyTestSupport.class, RecurringApiTest.TestClockConfig.class})
 class RecurringApiTest {
     static class MutableClock extends Clock {
         final AtomicReference<Instant> current = new AtomicReference<>();
@@ -107,7 +108,7 @@ class RecurringApiTest {
         JsonNode r=create(input("DAILY","2026-01-02"));UUID id=UUID.fromString(r.get("id").asText());clock.date("2026-01-06");
         try(var executor=Executors.newFixedThreadPool(6)) {
             var ready=new CountDownLatch(6);var go=new CountDownLatch(1);List<Future<Integer>> results=new ArrayList<>();
-            for(int i=0;i<6;i++) results.add(executor.submit(()->{ready.countDown();go.await();return service.processOne(id);}));
+            for(int i=0;i<6;i++) results.add(executor.submit(()->{ready.countDown();go.await();var result=new int[1];CurrentIdentity.processAccount(DemoIdentity.USER_ID,DemoIdentity.ACCOUNT_ID,()->result[0]=service.processOne(id));return result[0];}));
             assertThat(ready.await(5,TimeUnit.SECONDS)).isTrue();go.countDown();int sum=0;
             for(var future:results) sum+=future.get(15,TimeUnit.SECONDS);
             assertThat(sum).isEqualTo(5);assertThat(count("transactions")).isEqualTo(5);assertThat(count("recurring_occurrences")).isEqualTo(5);
@@ -212,7 +213,7 @@ class RecurringApiTest {
     }
     @Test void startupCatchUpAndRepeatedTicksAreIdempotent() throws Exception {
         create(input("DAILY","2026-01-02"));clock.date("2026-01-06");
-        RecurringScheduleRunner runner = new RecurringScheduleRunner(processor);
+        RecurringScheduleRunner runner = new RecurringScheduleRunner(processor,jdbc);
         runner.onReady(); runner.tick(); runner.onReady();
         assertThat(dates()).containsExactly("2026-01-02","2026-01-03","2026-01-04","2026-01-05","2026-01-06");balance("950.00");
     }

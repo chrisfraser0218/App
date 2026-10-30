@@ -46,24 +46,47 @@ export interface Summary {
   expenses: string | number;
   categories: { categoryId: string; name: string; amount: string | number }[];
 }
+export class ApiError extends Error {
+  constructor(public status: number, message: string) { super(message); }
+}
+let csrf: Promise<string> | undefined;
+let sessionEpoch=0;
+export function clearCsrf() { csrf = undefined;sessionEpoch++; }
+export async function prepareCsrf(): Promise<string> {
+  return csrf ??= fetch('/api/auth/csrf', { credentials: 'same-origin', cache: 'no-store' })
+    .then(async response => { if (response.status===401) {clearCsrf();window.dispatchEvent(new Event('finsight-session-expired'));} if (!response.ok) throw new ApiError(response.status,'Unable to start a secure session'); return (await response.json()).token as string; })
+    .catch(error => { csrf=undefined; throw error; });
+}
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const epoch=sessionEpoch;
   let response: Response;
   try {
+    const method=(init?.method ?? 'GET').toUpperCase();
+    const token=!['GET','HEAD','OPTIONS'].includes(method) ? await prepareCsrf() : undefined;
     response = await fetch(`/api${path}`, {
+      credentials: 'same-origin', cache: 'no-store',
       ...init,
-      headers: { "Content-Type": "application/json", ...init?.headers },
+      headers: { "Content-Type": "application/json", ...(token ? { "X-CSRF-TOKEN": token } : {}), ...init?.headers },
     });
   } catch {
     throw new Error(
       "Unable to reach FinSight. Check that the backend is running and try again.",
     );
   }
+  if (response.status===403) csrf=undefined; // A rejected nonce must not trap the next explicit retry.
+  if (response.status===403 && !path.startsWith('/auth/') && epoch===sessionEpoch) {
+    const check=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'}).catch(()=>null);
+    if(check?.status===401){clearCsrf();window.dispatchEvent(new Event('finsight-session-expired'));}
+  }
+  if (response.status===401 && !path.startsWith('/auth/') && epoch===sessionEpoch) {
+    clearCsrf(); window.dispatchEvent(new Event('finsight-session-expired'));
+  }
   if (!response.ok) {
     const problem = await response.json().catch(() => null);
-    throw new Error(
+    throw new ApiError(response.status,
       problem?.errors?.join(". ") ||
         problem?.detail ||
-        `Request failed (${response.status}). Please try again.`,
+        (response.status===403 ? "Your session check expired or was rejected. Please try again." : `Request failed (${response.status}). Please try again.`),
     );
   }
   if (response.status === 204) return undefined as T;

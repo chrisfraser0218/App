@@ -139,6 +139,27 @@ class BackupTests(unittest.TestCase):
         import zipfile
         with zipfile.ZipFile(self.m.exports/c['exportId']) as archive:self.assertIn("'=formula",archive.read('transactions.csv').decode());self.assertIn('0.10',archive.read('transactions.csv').decode())
         self.m.run('tick',{});self.assertEqual(self.m.status()['lastExport']['exportId'],c['exportId'])
+    def test_export_owner_is_validated_scoped_and_retained_without_authentication_data(self):
+        import uuid
+        owner=str(uuid.uuid4());queries=[]
+        def query(db,sql,snapshot=None):
+            queries.append(sql)
+            return '[]'
+        with patch.object(self.m,'sql',side_effect=query):
+            result=self.m.run('export',{'format':'json','userId':owner})
+        self.assertEqual(result['userId'],owner)
+        for sql in queries:
+            if 'to_regclass' not in sql:
+                self.assertIn("WHERE user_id='"+owner+"'",sql)
+                self.assertNotIn('password_hash',sql)
+                self.assertNotIn('FROM "users"',sql)
+        ownership=self.m.exports/(result['exportId'].split('.')[0]+'.owner.json')
+        self.assertEqual(json.loads(ownership.read_text()),{'userId':owner})
+        self.assertEqual(ownership.stat().st_mode&0o777,0o600)
+        data=json.loads((self.m.exports/result['exportId']).read_text())
+        self.assertNotIn('users',data['data'])
+        with self.assertRaisesRegex(BackupError,'Invalid export owner'):
+            self.m.run('export',{'format':'json','userId':"' OR true --"})
     def test_savings_exports_include_allocation_audit_and_safe_notes(self):
         def query(db,sql,snapshot=None):
             if 'to_regclass' in sql:return 't'
