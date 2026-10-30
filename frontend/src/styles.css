@@ -1371,3 +1371,215 @@ fieldset.form-stack {
     flex-wrap: nowrap;
   }
 }
+
+.forecast-workspace {
+  display: grid;
+  gap: 22px;
+}
+.forecast-controls {
+  padding: 22px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.forecast-controls > div {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.forecast-controls label,
+.compact-control,
+.what-if-form label {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.forecast-controls .forecast-footnote {
+  width: 100%;
+}
+.forecast-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.forecast-summary h2 {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.forecast-summary p {
+  font-size: 10px;
+  line-height: 1.6;
+}
+.negative {
+  color: #d06079;
+}
+.forecast-chart {
+  height: 365px;
+  padding: 20px 12px 0;
+}
+.forecast-chart-panel .panel-heading,
+.planned-panel .panel-heading,
+.forecast-workspace .panel > .panel-heading {
+  padding-bottom: 20px;
+}
+.forecast-footnote {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.8;
+  padding: 0 22px 18px;
+}
+.forecast-controls .forecast-footnote {
+  padding: 0;
+}
+.forecast-tooltip {
+  max-width: 330px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px;
+  font-size: 11px;
+  box-shadow: 0 4px 18px #0002;
+}
+.forecast-tooltip p {
+  margin: 8px 0;
+  color: var(--muted);
+}
+.forecast-tooltip ul {
+  padding-left: 14px;
+  line-height: 1.8;
+}
+.forecast-padding {
+  padding: 18px 24px;
+  font-size: 12px;
+}
+.forecast-warnings ul,
+.forecast-day-detail ul,
+.hypothesis-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px 20px;
+}
+.forecast-warnings li {
+  display: grid;
+  grid-template-columns: 110px 190px 1fr;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+.forecast-warnings li > span {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.forecast-day-detail {
+  padding: 22px 24px;
+  border-top: 1px solid var(--line);
+}
+.forecast-day-detail h3 {
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+.forecast-day-detail ul {
+  padding: 0;
+}
+.forecast-day-detail li,
+.hypothesis-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.forecast-day-detail small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 6px;
+}
+.what-if-form {
+  padding: 0 24px 22px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.4fr;
+  gap: 13px;
+  align-items: end;
+}
+.what-if-form .primary {
+  justify-self: start;
+  grid-column: 1/-1;
+}
+.forecast-daily-table {
+  max-height: 420px;
+  overflow: auto;
+}
+.planned-panel .panel-heading {
+  flex-wrap: wrap;
+}
+.compact-control {
+  min-width: 120px;
+}
+.forecast-workspace .panel-heading p {
+  max-width: 650px;
+}
+@media (max-width: 1050px) {
+  .forecast-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .what-if-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .forecast-warnings li {
+    grid-template-columns: 1fr 1fr;
+  }
+  .forecast-warnings li > span {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 580px) {
+  .forecast-summary {
+    grid-template-columns: 1fr;
+  }
+  .forecast-controls {
+    padding: 17px;
+  }
+  .forecast-controls > div {
+    width: 100%;
+  }
+  .forecast-controls label {
+    flex: 1;
+    min-width: 0;
+  }
+  .what-if-form {
+    grid-template-columns: 1fr;
+    padding: 0 17px 20px;
+  }
+  .forecast-chart {
+    height: 320px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .forecast-chart-panel .panel-heading {
+    flex-wrap: wrap;
+  }
+  .forecast-warnings li {
+    grid-template-columns: 1fr;
+  }
+  .forecast-tooltip {
+    max-width: 230px;
+  }
+  .forecast-workspace .panel-heading {
+    padding: 18px 17px;
+  }
+  .forecast-day-detail {
+    padding: 18px 17px;
+  }
+  .forecast-summary .metric {
+    font-size: 28px;
+  }
+}

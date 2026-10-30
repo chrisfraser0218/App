@@ -9,6 +9,7 @@ import {
 } from "./api";
 import { localDate, money, validMoney } from "./finance";
 
+import BalanceForecast from "./components/BalanceForecast";
 import RecurringTransactions from "./components/RecurringTransactions";
 import Icon from "./components/Icon";
 import Modal from "./components/Modal";
@@ -19,11 +20,13 @@ import DashboardCharts from "./components/DashboardCharts";
 
 export default function App() {
   const [page, setPage] = useState(
-    location.hash === "#recurring"
-      ? "recurring"
-      : location.hash === "#transactions"
-        ? "transactions"
-        : "dashboard",
+    location.hash === "#forecast"
+      ? "forecast"
+      : location.hash === "#recurring"
+        ? "recurring"
+        : location.hash === "#transactions"
+          ? "transactions"
+          : "dashboard",
   );
   const [dark, setDark] = useState(
     () => localStorage.getItem("finsight-theme") === "dark",
@@ -55,11 +58,13 @@ export default function App() {
   useEffect(() => {
     const handle = () =>
       setPage(
-        location.hash === "#recurring"
-          ? "recurring"
-          : location.hash === "#transactions"
-            ? "transactions"
-            : "dashboard",
+        location.hash === "#forecast"
+          ? "forecast"
+          : location.hash === "#recurring"
+            ? "recurring"
+            : location.hash === "#transactions"
+              ? "transactions"
+              : "dashboard",
       );
     window.addEventListener("hashchange", handle);
     return () => window.removeEventListener("hashchange", handle);
@@ -99,9 +104,10 @@ export default function App() {
     const refresh = async () => {
       if (document.visibilityState !== "visible") return;
       try {
-        await request("/recurring-transactions/process-due", {
-          method: "POST",
-        });
+        if (page !== "forecast")
+          await request("/recurring-transactions/process-due", {
+            method: "POST",
+          });
       } catch {
         /* Manual entry remains usable during a scheduling outage. */
       }
@@ -116,7 +122,7 @@ export default function App() {
       clearInterval(timer);
       window.removeEventListener("online", refresh);
     };
-  }, [month]);
+  }, [month, page]);
   function close() {
     if (!busy) {
       setModal(null);
@@ -231,6 +237,14 @@ export default function App() {
             <Icon name="repeat" />
             Recurring Transactions
           </a>
+          <a
+            href="#forecast"
+            className={page === "forecast" ? "active" : ""}
+            aria-current={page === "forecast" ? "page" : undefined}
+          >
+            <Icon name="up" />
+            Balance Forecast
+          </a>
         </nav>
         <div className="sidebar-bottom">
           <div className="demo-note">
@@ -261,7 +275,9 @@ export default function App() {
                 ? "Overview"
                 : page === "recurring"
                   ? "Recurring Transactions"
-                  : "Transactions"}
+                  : page === "forecast"
+                    ? "Balance Forecast"
+                    : "Transactions"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -288,14 +304,18 @@ export default function App() {
                   ? "Financial overview"
                   : page === "recurring"
                     ? "Recurring Transactions"
-                    : "Transactions"}
+                    : page === "forecast"
+                      ? "Balance Forecast"
+                      : "Transactions"}
               </h1>
               <p>
                 {page === "dashboard"
                   ? "A clear picture of where you are. A better sense of what’s next."
                   : page === "recurring"
                     ? "Rent, subscriptions, insurance, and paychecks — handled locally."
-                    : "Every little detail, all in one place."}
+                    : page === "forecast"
+                      ? "See what’s ahead with exact scheduled dates and your own plans."
+                      : "Every little detail, all in one place."}
               </p>
             </div>
             <button
@@ -314,7 +334,7 @@ export default function App() {
                 ? "Your everyday account"
                 : "Your financial activity"}
             </span>
-            {page !== "recurring" && (
+            {page !== "recurring" && page !== "forecast" && (
               <label className="month-control">
                 <span className="sr-only">Selected month</span>
                 <input
@@ -382,7 +402,14 @@ export default function App() {
                     onChanged={() => load(true)}
                   />
                 )}
-                {page !== "recurring" && (
+                {page === "forecast" && (
+                  <BalanceForecast
+                    categories={data.categories}
+                    transactions={data.transactions}
+                    onChanged={() => load(true)}
+                  />
+                )}
+                {page !== "recurring" && page !== "forecast" && (
                   <section className="panel transactions-panel">
                     <div className="panel-heading">
                       <div>
@@ -444,7 +471,7 @@ export default function App() {
                 <div className="bottom-note">
                   <span className="status-dot" />
                   Your data stays in your local PostgreSQL database.
-                  <span>FinSight AI · Phase 2B</span>
+                  <span>FinSight AI · Phase 2C</span>
                 </div>
               </>
             )

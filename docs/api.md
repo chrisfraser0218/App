@@ -49,3 +49,7 @@ Transaction POST/PUT now accepts optional `predictionId` in addition to the unch
 All routes are under `/api/recurring-transactions`: list/get/create, future-only PUT edits, PUT `/{id}/state` for pause/resume, POST `/{id}/stop` for cancellation, POST `/process-due`, GET `/{id}/history`, GET `/{id}/occurrences?from=...&to=...`, and POST `/{id}/reconcile` for explicit manual association or handled-only dates. Create requires a stable UUID requestId; edits/state/cancel require the current version. Existing transaction responses now add nullable recurringRuleId and occurrenceDate provenance. Existing manual transaction inputs and balance calculations are unchanged.
 
 See [full contracts and recurrence semantics](recurring-transactions.md#api).
+
+## Forecasts and plans (Phase 2C)
+
+`GET /forecasts`, `/forecasts/monthly`, and `/forecasts/daily/{date}` expose deterministic read-only projections. `POST /forecasts/scenarios` returns baseline/scenario comparison without saving it. `GET/PUT /forecast-preferences` reads defaults or explicitly saves a versioned threshold. `/planned-transactions` supports list/create, versioned PUT edits, POST `/{id}/cancel`, and explicit POST `/{id}/complete` RECORD/LINK/HANDLED actions. These response monetary values are exact decimal strings. See [full contracts and completion semantics](balance-forecast.md#api).

@@ -134,3 +134,41 @@ A newer backup at `~/Library/Application Support/FinSight AI/backups/phase2b-pre
 V3 created only recurring_rules, recurring_occurrences, recurring_prediction_feedback, and a successful Flyway entry. Existing financial tables and balances, other preserved databases, original Flyway rows, and PostgreSQL configuration files were verified unchanged. No personal schedules/payments were created. The personal endpoint and storage path remain 127.0.0.1:55432 and Application Support/postgres; startup and local credentials are unchanged. The original temporary cluster was not modified, deleted, or restarted.
 
 The exact-restore verifier supports `--use-restored-copies` for the retained pre-V3 copies instead of comparing the upgraded active schema against the old table set. See [Phase 2B backup verification and recovery notes](recurring-transactions.md#database-migration). Never restore a pre-V3 archive over the active database to make a comparison pass.
+
+## Phase 2C V4 upgrade
+
+The authorized Phase 2C update was completed on the same native Homebrew PostgreSQL 15.17 cluster at `127.0.0.1:55432`, with data still under `~/Library/Application Support/FinSight AI/postgres`. Neither this configuration nor the stopped original `/tmp/finsight-pgdata` was changed.
+
+Before migration, the owned application writer was stopped. A fresh backup was created at:
+
+`~/Library/Application Support/FinSight AI/backups/phase2c-pre-v4-20261029T200833Z-51b8a4/`
+
+All four source databases (`finsight_demo`, `finsight_test`, `postgres`, and `finsight_local_maintenance`) were archived, checksummed, completely decoded, and restored into separate protected databases **inside the existing persistent cluster**. Every restored row fingerprint/count, sequence state, and exact account balance matched. Previously retained financial restore copies were preserved, never treated as test fixtures. No new cluster, Docker, reset, deletion, or restore over an existing database was used.
+
+The backup and retained restore copies were verified again immediately before installation. All four source snapshots still matched; no personal rule was due for catch-up. The final built executable was checked against the source V4 migration and configuration, then started with the existing private environment.
+
+`V4__planned_transactions_and_forecast_preferences.sql` created only `planned_transactions` and `forecast_preferences`. V1–V3 SQL remains unchanged. Post-upgrade verification confirmed:
+
+- Every pre-existing financial row fingerprint/count, transaction identity, sequence state, and exact balance matched the pre-V4 snapshot.
+- Recurring rules/receipts and AI prediction/feedback data were preserved.
+- Other source databases and all original Flyway history rows were unchanged.
+- Only one successful V4 Flyway entry and the two **empty** tables were added. No personal plan, threshold, schedule, or payment was seeded.
+- PostgreSQL configuration files were unchanged, and the original temporary cluster remained stopped.
+- Read-only personal forecast checks for all five presets matched authoritative account balance, daily/monthly totals, and exact decimal arithmetic. The complete personal database fingerprint remained unchanged by those reads.
+
+Private evidence is stored beside the archives: `manifest.json`, `restore-verification.json`, `pre-v4-validation.json`, `post-v4-verification.json`, `post-v4-snapshots.json`, and `forecast-readonly-verification.json`. These contain protected comparison data and must never be committed, logged, or screenshotted.
+
+To reverify the retained exact pre-V4 restores without comparing the upgraded live schema to the old table set:
+
+```sh
+PGHOST="$HOME/Library/Application Support/FinSight AI/run" PGPORT=55432 \
+python3 scripts/verify-database-backup.py \
+  --backup "$HOME/Library/Application Support/FinSight AI/backups/phase2c-pre-v4-20261029T200833Z-51b8a4" \
+  --use-restored-copies
+```
+
+Executed verification: **95 backend tests on H2 and independently on the existing isolated PostgreSQL cluster**, **54 frontend tests**, **27 AI tests**, executable backend packaging, and optimized frontend build. Synthetic Chromium checks covered 22 forecast/UI/data-integrity checks, existing recurring workflows, real local AI/manual categories, transaction editing/deletion and dashboard arithmetic, chart hover/monthly views, scenarios, plan completion/retries, mobile dark mode, and read-only database fingerprints. No personal database writes were used for testing. One existing upstream Python test-client deprecation warning remains.
+
+Startup/credentials/ports are unchanged. See [local operation](local-operation.md) and [forecast methodology, contracts, and limits](balance-forecast.md). Recovery still requires a separate empty recovery destination and full verification before explicit cutover; never restore this pre-V4 snapshot over the live database or discard newer payments/plans to make an old fingerprint match. Automatic backup scheduling, retention cleanup, Phase 2D, and desktop packaging remain future work.
+
+After verification, the synthetic browser API/frontend and isolated test server were stopped cleanly, retaining all their databases/data directories. Normal frontend (`127.0.0.1:5173`), personal backend (`127.0.0.1:8080`), local AI (`127.0.0.1:8000`), and persistent PostgreSQL were left running. Read-only proxy comparisons matched the personal account/plans/preferences/forecast endpoints, and AI health reported ready.

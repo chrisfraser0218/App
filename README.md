@@ -2,7 +2,7 @@
 
 A personal finance workspace built with React, TypeScript, Java 21, Spring Boot, and PostgreSQL. Phase 1 delivers a functional local demo: record income and expenses, set an opening balance, and understand spending through interactive charts.
 
-**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; forecasting, a bill calendar, and an AI assistant remain future work.
+**Local demo only.** The application uses a clearly labelled Alex Morgan demo account. There is no production authentication. The API and database bind to loopback; do not expose them with tunnels, public interfaces, or deployment services. Phase 2A adds experimental, user-reviewed expense categorization. Phase 2B adds recurring income/expenses; Phase 2C adds deterministic future balance forecasts, planned one-time payments, and unsaved what-if comparisons. A bill calendar and AI assistant remain future work.
 
 ![FinSight AI financial dashboard in light mode](docs/screenshots/dashboard-light.png)
 
@@ -31,7 +31,7 @@ Current browser development continues with the existing stack. Existing records 
 
 A separate Python/FastAPI service loads a saved TF-IDF + Logistic Regression model. The expense form shows optional suggestions and actual model confidence; it never changes a manually selected category automatically. Java applies timeouts, handles unavailable AI, maps model labels to existing categories, and records accepted/corrected feedback when an expense is saved. Feedback is unreviewed and never triggers automatic retraining.
 
-[AI setup, architecture, API, evaluation, feedback, Docker profiles, and limitations](docs/ai-categorization.md)
+[AI setup, architecture, API, evaluation, feedback, and limitations](docs/ai-categorization.md)
 
 Quick start in another terminal, alongside the existing backend/frontend:
 
@@ -46,7 +46,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 
 Java defaults to `http://127.0.0.1:8000`; override with `AI_SERVICE_URL`. Try **Starbucks Coffee / 8.75** in Add transaction and review the suggested Food & Drinks → Dining category. The v1 held-out synthetic evaluation scored **45/45 classifications**, offering **43/45 suggestions** after abstention. Merchants/vocabulary overlap across the split; these numbers establish **no real-world accuracy claim**.
 
-Run Python tests with `cd ai-service && python -m pytest -q` after installing development requirements. The default Docker workflow still starts just PostgreSQL. Use `docker compose --profile ai up -d --build --wait` for PostgreSQL + AI, or `docker compose --profile app up -d --build` for the entire stack. Docker runtime verification remains pending on a machine with Docker available.
+Run Python tests with `cd ai-service && python -m pytest -q` after installing development requirements. Use the native startup instructions below. Do not introduce Docker or replace the existing Homebrew installation.
 
 ## Phase 2B: recurring transactions
 
@@ -58,12 +58,18 @@ Due dates post into the existing ledger automatically on backend startup and whi
 
 The native PostgreSQL setup is unchanged. V3 added three empty recurring tables after a full verified backup; all existing financial records and balances were confirmed unchanged. No schedules or payments were seeded. New pre-V3 backups and retained restore mappings are under `~/Library/Application Support/FinSight AI/backups/phase2b-pre-v3-20261029T192555Z-378583/`.
 
+## Phase 2C: future balance forecasting
+
+**Balance Forecast** (`/#forecast`) projects actual ledger balance using exact recurring dates and separate planned income/expenses. Choose 1/3/5/6/12 months or a custom future date; inspect daily/monthly tables, chart tooltips, low-balance warnings, and unsaved baseline-versus-what-if comparisons. Plans change projections only and require explicit record/link/handled completion. Forecasts are read-only, use precise Java decimals, reuse Phase 2B recurrence rules, and need neither Python AI nor internet.
+
+[Forecast methodology, UI, completion safety, API examples, tests, and limits](docs/balance-forecast.md). V4 adds two tables without altering financial records. See the [verified pre-V4 backup and integrity report](docs/database-migration.md#phase-2c-v4-upgrade). No Phase 2D calendar or desktop packaging is included.
+
 ## Prerequisites
 
 - Python **3.11** for the optional AI service.
 - Java **21** and Maven **3.9+** (`java -version`, `mvn -version`).
 - Node **22.x, version 22.12 or newer**, and npm.
-- Homebrew PostgreSQL **15** for the migrated native cluster. Docker/Compose is optional for separate synthetic development.
+- Homebrew PostgreSQL **15** for the migrated native cluster. Use the existing native installation; do not introduce Docker.
 
 ## Run locally
 
@@ -96,15 +102,19 @@ Open **http://127.0.0.1:5173**. Vite proxies `/api` to 127.0.0.1:8080. Start the
 
 The [migration and recovery guide](docs/database-migration.md) gives the exact backup directory, verification command, native PostgreSQL procedure, and AI startup instructions. PostgreSQL must be stopped only after the backend and other database clients disconnect. No autostart/desktop launcher is implemented.
 
-Docker remains an optional alternative for **separate synthetic development**: copy `.env.example` to `.env`, configure local test credentials, and run Compose with its loopback ports. Do not use those defaults to replace the migrated personal connection or delete an existing volume. The persisted native cluster was migrated using Homebrew PostgreSQL, not Docker.
+Legacy Compose files remain in source history but are not the supported operating/testing procedure. Keep the existing Homebrew cluster and isolated native test environment.
 
 ## Verify
+
+Phase 2C verification passed: **95 backend tests on H2 and isolated PostgreSQL, 54 frontend tests, 27 AI tests**, executable backend packaging, and optimized frontend build. Synthetic browser acceptance covered forecast interactions and existing recurring/manual/AI workflows. See the [V4 integrity and test report](docs/database-migration.md#phase-2c-v4-upgrade).
 
 ```sh
 cd frontend
 npm test
 npm run build
 ```
+
+Stop the owned backend before `mvn verify` or `mvn package`: packaging must not replace a JAR that a running process is loading. Keep PostgreSQL running and preserve its data. Restart Java after the verified build.
 
 ```sh
 cd backend
@@ -113,7 +123,7 @@ mvn verify
 
 The backend suite starts the full application with MockMvc, Flyway, and H2 in PostgreSQL compatibility mode. It covers CRUD, exact decimal balances, starting balance changes, invalid values, category/type validation, calendar-month summaries, data isolation, and local access restrictions. Phase 1 tests roll back their changes; prediction integration tests clear their isolated synthetic fixtures.
 
-For Phase 2B PostgreSQL testing, reuse the already-existing isolated cluster under `/tmp/finsight-isolated-verification-12473ab7c796/postgres` on loopback port 55434 with its synthetic `finsight_verification` database. Do not initialize another cluster, use Docker, or repoint tests to the persistent personal cluster. If the existing isolated environment is unavailable, stop and report the limitation rather than bypassing the guard or creating a cluster. The test startup guard permits this dedicated location (or CI's ephemeral PostgreSQL container), and rejects personal clusters **before Flyway, seeding, or fixture deletes**. Neither preserved database named `finsight_test` is a safe test target.
+For Phase 2B/2C PostgreSQL testing, reuse the already-existing isolated cluster under `/tmp/finsight-isolated-verification-12473ab7c796/postgres` on loopback port 55434 with its synthetic `finsight_verification` database. Do not initialize another cluster, use Docker, or repoint tests to the persistent personal cluster. If the existing isolated environment is unavailable, stop and report the limitation rather than bypassing the guard or creating a cluster. The test startup guard permits this dedicated location (or CI's ephemeral PostgreSQL container), and rejects personal clusters **before Flyway, seeding, or fixture deletes**. Neither preserved database named `finsight_test` is a safe test target.
 
 Pass test credentials through the environment, not Java command arguments:
 
@@ -171,7 +181,7 @@ If changing `PORT`, also change the Vite proxy target and allowed local origins.
 
 Phase 1 supports one demo user, one USD account, and predefined categories. Future-dated transactions are rejected. Available balance includes every recorded transaction; month selection changes charts, summary totals, and visible history, not that balance. Starting balance is an opening amount, not a transaction or a dated balance adjustment.
 
-Next priorities, in order: recurring income and expenses; automatic, idempotent recurring transaction processing; future balance forecasts; an interactive bill calendar; accurate financial calculations; and automated tests. After those browser features, implement automatic local backups and verified restoration, then evaluate desktop packaging. Keep forecasts separate from posted transactions and support safe catch-up after the app has been closed. Cloud/AWS deployment and public exposure are excluded from the permanent architecture. Local application security should fit one MacBook and must not require hosted authentication.
+Recurring processing and deterministic forecasts are implemented. Next is Phase 2D, an interactive bill calendar, with continued calculation accuracy and regression testing. After those browser features, implement automatic local backups and verified restoration, then evaluate desktop packaging. Keep forecasts separate from posted transactions and support safe catch-up after the app has been closed. Cloud/AWS deployment and public exposure are excluded from the permanent architecture. Local application security should fit one MacBook and must not require hosted authentication.
 
 See [architecture](docs/architecture.md), [API examples](docs/api.md), and [database migration/recovery](docs/database-migration.md).
 

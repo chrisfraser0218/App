@@ -13,12 +13,12 @@ These instructions apply to the entire repository and all future development. Th
 
 ## Preserve the stack
 
-Keep React + TypeScript, Java Spring Boot, PostgreSQL, Python + FastAPI, and scikit-learn. Keep existing Vite, Tailwind, and Recharts. Phase 2B must use the native Homebrew PostgreSQL installation: do not introduce/use Docker or create a new PostgreSQL cluster. Reuse the already-existing isolated test environment for PostgreSQL tests; if it is unavailable, report that rather than initializing a cluster. Explain why a stack replacement is necessary and obtain the owner's approval before replacing any of these technologies. In particular, do not replace PostgreSQL with SQLite to simplify packaging.
+Keep React + TypeScript, Java Spring Boot, PostgreSQL, Python + FastAPI, and scikit-learn. Keep existing Vite, Tailwind, and Recharts. Development must use the native Homebrew PostgreSQL installation: do not introduce/use Docker or create a new PostgreSQL cluster. Reuse the already-existing isolated test environment for PostgreSQL tests; if it is unavailable, report that rather than initializing a cluster. Explain why a stack replacement is necessary and obtain the owner's approval before replacing any of these technologies. In particular, do not replace PostgreSQL with SQLite to simplify packaging.
 
 ## Network and local security
 
 - Bind native development/application services to `127.0.0.1` wherever possible, including preview servers, Spring Boot, PostgreSQL, and FastAPI. Do not use LAN/public listeners, public tunnels, cloud proxies, or router forwarding.
-- Container processes may need internal `0.0.0.0` listeners for container communication; any host port publication must explicitly bind `127.0.0.1`. This is not permission to expose the Mac's interfaces. Docker remains a development option, not the final application's runtime requirement.
+- Do not introduce or use Docker for the MacBook application or verification. Preserve the existing native Homebrew PostgreSQL configuration and existing isolated test cluster. Legacy container files are not authorization to replace them.
 - Preserve host/origin validation, restrictive cross-origin rules, input validation, timeouts, and server-selected ownership. Localhost alone is not authentication or protection from other local processes/websites.
 - Design appropriate local controls: least-privilege database roles, owner-only filesystem access, locally managed secrets, and narrowly scoped local API access. No paid or hosted identity provider is needed for this single-user product.
 - Keep financial writes and precise calculations in Java/PostgreSQL; the AI service must not access the database directly. Suggestions remain optional and never override a user's manually chosen category.
@@ -43,7 +43,7 @@ Keep React + TypeScript, Java Spring Boot, PostgreSQL, Python + FastAPI, and sci
 - Future-only edits preserve history; resume skips paused dates; cancel retains all posted entries. Manual reconciliation is explicit and never infers duplicates or silently deletes/rewrites a payment.
 - Recurring expense AI suggestions retain manual category control. Definition feedback is separate from ordinary transaction feedback; no automatic retraining or AI dependency in the posting worker.
 - No personal schedules or transactions were seeded during V3 installation. Verify any future schema update against a new restore-verified local backup before applying it to the personal database.
-- Phase 2C forecasts, Phase 2D bill calendar, desktop packaging, and commits remain unauthorized unless explicitly requested.
+- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar, desktop packaging, and commits remain unauthorized unless explicitly requested.
 
 ## Current development priorities
 
@@ -75,3 +75,12 @@ Build and verify a new executable before starting it. Do not overwrite/repackage
 ## Delivery discipline
 
 Preserve unrelated work. Do not deploy or make Git commits unless explicitly instructed. Run relevant local tests/builds and report only checks actually executed. Clearly identify untested behavior and remaining work. See [local operation and desktop plan](docs/local-operation.md), [database migration/recovery](docs/database-migration.md), [recurring transactions](docs/recurring-transactions.md), [architecture](docs/architecture.md), and [AI guide](docs/ai-categorization.md).
+
+## Phase 2C installed behavior
+
+- V4 adds only `planned_transactions` and `forecast_preferences`; never rewrite applied V1–V4 migrations. Preserve open/completed/canceled plans, completion links/receipts, and threshold versions in future migrations/backups.
+- Forecasts/scenarios must be read-only snapshot calculations using authoritative actual balance and Phase 2B `RecurrenceDates` plus persisted cursors/receipts. Never call the posting worker, write default preferences, send model requests, or persist hypothetical/forecast entries to the ledger from a forecast read.
+- Use the shared injectable business clock, exact BigDecimal values/decimal-string forecast responses, inclusive daily closing balances, and explicit overdue assumptions. Keep input horizons/event counts bounded.
+- Plans never auto-post. Completion requires explicit RECORD (due only), LINK (with mismatched-amount confirmation), or HANDLED. Preserve stable request IDs, row/version locks, unique payment links, and completion history even if a linked actual payment is deleted. Do not silently reopen completed plans or infer duplicate payments.
+- What-if state stays transient. Threshold persistence is an explicit versioned user action. Preserve actual/projected distinctions, manual categories, existing recurring catch-up, and all AI functionality.
+- See [forecast semantics and contracts](docs/balance-forecast.md). Pre-V4 backup: `~/Library/Application Support/FinSight AI/backups/phase2c-pre-v4-20261029T200833Z-51b8a4/`. Its private manifest maps retained protected restore copies; never use these financial copies as test databases or delete them as cleanup.

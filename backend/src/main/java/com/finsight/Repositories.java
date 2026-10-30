@@ -32,3 +32,11 @@ interface RecurringRuleRepository extends JpaRepository<RecurringRule, UUID> {
     @Query("select r.id from RecurringRule r where r.userId = :userId and r.accountId = :accountId and r.enabled = true and r.archived = false and r.nextDate <= :today order by r.id")
     List<UUID> dueIds(@Param("userId") UUID userId, @Param("accountId") UUID accountId, @Param("today") java.time.LocalDate today);
 }
+
+interface PlannedTransactionRepository extends JpaRepository<PlannedTransaction,UUID> {
+    List<PlannedTransaction> findByUserIdAndAccountIdOrderByPlannedDateAscCreatedAtAsc(UUID userId, UUID accountId);
+    Optional<PlannedTransaction> findByUserIdAndRequestId(UUID userId, UUID requestId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from PlannedTransaction p where p.id=:id and p.userId=:userId and p.accountId=:accountId")
+    Optional<PlannedTransaction> lockOwned(@Param("id") UUID id,@Param("userId") UUID userId,@Param("accountId") UUID accountId);
+}
