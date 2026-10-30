@@ -126,3 +126,7 @@ Open `http://127.0.0.1:5173/#insights` with the same local PostgreSQL/Java/Vite 
 ## Phase 4 operation
 
 Open `http://127.0.0.1:5173/#assistant` using the same native services. The deterministic assistant has no LLM/runtime/download requirement and needs no migration. Existing optional Python statistics remain useful for unusual-spending questions; all core questions work offline with Java/PostgreSQL. Chat remains in page memory only. No new persistent service or PostgreSQL configuration change was made. See [supported questions, local model assessment, security and tests](financial-assistant.md). Optional model/runtime installation needs explicit owner approval; none was installed.
+
+## Phase 5 operation
+
+Open `http://127.0.0.1:5173/#savings` with the same native services. Goals are a separate allocation book; current bank balances and cash-flow forecasts keep their existing calculations. Optional contribution intentions are never automatic ledger transfers. V5/V6 require the fresh restore-verified pre-upgrade backup documented in [database migration](database-migration.md); do not start an upgrade against personal data without verifying it. Backup/export includes the savings tables. See [savings semantics and verification](savings-goals.md). No new persistent service or PostgreSQL configuration is introduced, and Phase 6 packaging is deferred.

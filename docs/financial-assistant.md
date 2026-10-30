@@ -1,6 +1,6 @@
 # Local Financial Assistant — Phase 4
 
-Open `http://127.0.0.1:5173/#assistant` with the existing native PostgreSQL, Spring Boot and Vite startup. No new runtime, dependency, database schema, model weights, persistent chat store or service is required. This is a **deterministic offline assistant, not an LLM**. Existing Python categorization and optional spending statistics remain unchanged. Savings goals and desktop packaging are not implemented.
+Open `http://127.0.0.1:5173/#assistant` with the existing native PostgreSQL, Spring Boot and Vite startup. No new runtime, dependency, database schema, model weights, persistent chat store or service is required. This is a **deterministic offline assistant, not an LLM**. Existing Python categorization and optional spending statistics remain unchanged. Savings Goals are now available in Phase 5; desktop packaging remains unimplemented.
 
 ## Architecture and read-only boundary
 
@@ -117,3 +117,7 @@ All write-based checks and screenshots used only the established isolated cluste
 Final normal-application verification also passed: ten assistant questions through the standard frontend proxy (including a hypothetical), correct actual balance, no-store responses, unchanged forecast responses and independently matched insight totals. All four preserved source databases retained identical canonical rows/counts/sequences/exact balances; applied Flyway history and native PostgreSQL configuration matched the fresh pre-work snapshots. Existing protected backup dump/manifest/checksum fingerprints matched. Private evidence is at `~/Library/Application Support/FinSight AI/backups/phase4-verification-20261030T160713Z/`. No personal financial payloads were printed or placed in repository reports/screenshots.
 
 The original `/tmp/finsight-pgdata` remains stopped and untouched. The existing isolated test cluster was cleanly stopped and its data retained. Normal personal PostgreSQL/backend/frontend, existing local Python AI and the approved backup-only LaunchAgent remain available. No new persistent service, database migration, model/runtime installation, deployment or Git commit was made.
+
+## Phase 5 savings questions
+
+The deterministic assistant now reads SavingsService for exact saved/remaining/progress/required-monthly/completion values, with explicit recorded-allocation or allocation-estimate labels and a Savings Goals link. Use exact goal names; duplicate/ambiguous goals ask for clarification. A sole goal can resolve “my savings goal” or “my target.” Closest compares displayed progress and reports ties. Source contributions remain separate from bank transactions; the assistant cannot create goals/entries, edit schedules or perform transfers. No goal conversational context or language model is added. See [savings assumptions and language limits](savings-goals.md#assistant-and-insights-integration).

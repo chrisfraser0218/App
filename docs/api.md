@@ -80,3 +80,7 @@ Concurrent operations return 409 or report the standalone lock conflict; setting
 ## Local Financial Assistant (Phase 4)
 
 `POST /api/assistant/questions` accepts `{ "question": "How much did I spend this month?", "context": null }`. It is read-only despite using POST to keep private questions out of URLs. A deterministic allowlisted parser returns grounded answers with kind/date labels, exact-string metrics, owned evidence/count, assumptions, fixed links and validated optional follow-up context. No chat is persisted and no financial/backup mutation tool exists. Unsupported/ambiguous questions return explicit statuses, not invented results. See [complete contract and supported patterns](financial-assistant.md#api).
+
+## Savings Goals (Phase 5)
+
+`/api/savings-goals` provides GET dashboard, POST create, GET/PUT `/{id}`, POST `/{id}/state`, POST `/{id}/entries`, POST `/{id}/entries/{entryId}/correct` and PUT `/{id}/schedule`. Views use exact decimal strings; mutations require stable creation/entry/correction request IDs or current goal versions as appropriate. Entries and projections are allocations, not automatic cash transactions. No destructive delete API exists. See [contracts, linking rules and calculation sources](savings-goals.md#apis-and-storage). The existing read-only assistant now supports savings questions without exposing these mutation methods as tools.

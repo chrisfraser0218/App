@@ -12,15 +12,16 @@ import static com.finsight.AssistantModels.*;
 @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
 class AssistantService {
     private final AssistantParser parser;
+    private final SavingsAssistant savings;
     private final FinanceService finance;
     private final SpendingService spending;
     private final ForecastService forecasts;
     private final CalendarService calendar;
     private final Clock clock;
     static final List<String> SUGGESTIONS=List.of("How much did I spend this month?","How much did I spend on groceries last month?","What were my largest expenses?","How much have I earned this year?","What is my current actual balance?","How much will I have next month?","What bills are due next week?","What unusual expenses have I had recently?");
-    AssistantService(AssistantParser parser,FinanceService finance,SpendingService spending,ForecastService forecasts,CalendarService calendar,Clock clock){this.parser=parser;this.finance=finance;this.spending=spending;this.forecasts=forecasts;this.calendar=calendar;this.clock=clock;}
+    AssistantService(AssistantParser parser,FinanceService finance,SpendingService spending,ForecastService forecasts,CalendarService calendar,Clock clock,SavingsAssistant savings){this.savings=savings;this.parser=parser;this.finance=finance;this.spending=spending;this.forecasts=forecasts;this.calendar=calendar;this.clock=clock;}
     Answer ask(Question q){
-        try{return execute(parser.parse(q,LocalDate.now(clock),finance.categories()));}
+        try{var parsed=parser.parse(q,LocalDate.now(clock),finance.categories());return parsed.intent()==Intent.SAVINGS?savings.answer(q.question()):execute(parsed); }
         catch(AssistantParser.Clarification e){return message("clarification",e.getMessage());}
         catch(AssistantParser.Unsupported e){return message("unsupported",e.getMessage());}
     }

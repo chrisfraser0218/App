@@ -139,6 +139,20 @@ class BackupTests(unittest.TestCase):
         import zipfile
         with zipfile.ZipFile(self.m.exports/c['exportId']) as archive:self.assertIn("'=formula",archive.read('transactions.csv').decode());self.assertIn('0.10',archive.read('transactions.csv').decode())
         self.m.run('tick',{});self.assertEqual(self.m.status()['lastExport']['exportId'],c['exportId'])
+    def test_savings_exports_include_allocation_audit_and_safe_notes(self):
+        def query(db,sql,snapshot=None):
+            if 'to_regclass' in sql:return 't'
+            return '[{"id":"synthetic","note":"=unsafe","reason":"+reason","target_amount":5000.00,"amount":0.10}]'
+        with patch.object(self.m,'sql',side_effect=query):
+            result=self.m.run('export',{'format':'json'});csv=self.m.run('export',{'format':'csv'})
+        data=json.loads((self.m.exports/result['exportId']).read_text())
+        self.assertTrue(data['savingsDataAvailable'])
+        for table in ['savings_goals','savings_entries','savings_corrections','savings_schedules']:
+            self.assertIn(table,data['data']);self.assertEqual(data['data'][table][0]['amount'],'0.10')
+        import zipfile
+        with zipfile.ZipFile(self.m.exports/csv['exportId']) as archive:
+            self.assertIn("'=unsafe",archive.read('savings_entries.csv').decode())
+            self.assertIn("'+reason",archive.read('savings_corrections.csv').decode())
     def test_failure_retry_is_throttled(self):
         with patch.object(self.m,'command',side_effect=BackupError('Service unavailable')):
             with self.assertRaises(BackupError):self.m.run('tick',{})

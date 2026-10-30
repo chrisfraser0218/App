@@ -43,7 +43,7 @@ Keep React + TypeScript, Java Spring Boot, PostgreSQL, Python + FastAPI, and sci
 - Future-only edits preserve history; resume skips paused dates; cancel retains all posted entries. Manual reconciliation is explicit and never infers duplicates or silently deletes/rewrites a payment.
 - Recurring expense AI suggestions retain manual category control. Definition feedback is separate from ordinary transaction feedback; no automatic retraining or AI dependency in the posting worker.
 - No personal schedules or transactions were seeded during V3 installation. Verify any future schema update against a new restore-verified local backup before applying it to the personal database.
-- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar is authorized and implemented. Phase 3 Spending Insights is authorized and implemented. Phase 4 deterministic Local Financial Assistant is now authorized. Savings goals, desktop packaging, deployment, commits and optional LLM installation remain unauthorized unless explicitly requested.
+- Phase 2C forecasting is authorized and implemented. Phase 2D bill calendar is authorized and implemented. Phase 3 Spending Insights is authorized and implemented. Phase 4 deterministic Local Financial Assistant is now authorized. Phase 5 Savings Goals is now authorized. Desktop packaging, deployment, commits and optional LLM installation remain unauthorized unless explicitly requested.
 
 ## Current development priorities
 
@@ -110,7 +110,7 @@ Preserve unrelated work. Do not deploy or make Git commits unless explicitly ins
 - Insights must never post/reconcile transactions, change categories/schedules/plans/preferences/balances, save default metadata, or retrain. The independent existing recurring worker remains unchanged. No Phase 3 schema migration is needed.
 - Distinguish recorded facts, statistical observations, normalized cadence estimates and recommendations. Show exact comparison dates, incomplete-data abstention and bounded evidence. Never label synthetic evaluation real-world accuracy or a robust threshold a probability.
 - Reuse ForecastService for exact pending recurring payments and permanent receipts for recorded linkage. Do not count plan/recurring links twice or call steady-cadence equivalents exact month totals. Keep manual categorization and all previous financial/backup behavior intact.
-- See [Spending Insights contracts, methods, evaluation and limits](docs/spending-insights.md). Phase 4 deterministic assistant is now authorized; savings goals, optional LLM installation and desktop packaging need separate authorization.
+- See [Spending Insights contracts, methods, evaluation and limits](docs/spending-insights.md). Phase 4 deterministic assistant is now authorized; Phase 5 savings goals is now authorized; optional LLM installation and desktop packaging need separate authorization.
 
 ## Phase 4 deterministic assistant protections
 
@@ -118,4 +118,13 @@ Preserve unrelated work. Do not deploy or make Git commits unless explicitly ins
 - All financial numbers must come from existing deterministic services; maintain exact decimal-string responses, date validation, owned evidence, explicit actual/projected/estimate/hypothetical labels and honest ambiguity/empty/outage behavior. Hypotheticals remain transient ForecastService scenarios.
 - Chat/context remain bounded page memory only, never persisted or logged. Revalidate client-supplied context and render retrieved text only as escaped data. Assistant reads suppress frontend posting without disabling independently authorized recurring/backup workers.
 - No LLM/runtime/model download is authorized by Phase 4. Hardware/model assessment is documentation only; require explicit approval before installing Ollama, weights or another inference runtime. Keep existing Python statistical/categorization behavior intact.
-- See [Financial Assistant architecture, language patterns and verification](docs/financial-assistant.md). Phase 5 savings goals, desktop packaging, deployment and commits remain outside scope.
+- See [Financial Assistant architecture, language patterns and verification](docs/financial-assistant.md). Phase 5 savings goals is now authorized; desktop packaging, deployment and commits remain outside scope.
+
+## Phase 5 savings allocation protections
+
+- V5 adds only savings goal/allocation/correction/schedule tables; V6 adds unique whole-cash-flow schedule links. Preserve all applied migrations; schema upgrades require a fresh restore-verified native backup. Never seed personal savings fixtures.
+- Savings entries are allocation records, never cash ledger writes. In-account reservations reduce only displayed unallocated balance; external tracked savings must not be subtracted again after a real outbound payment. Include archived/completed reservations until an explicit withdrawal/correction.
+- Keep positive money/direction separation, daily per-location nonnegative balances, retained correction audit, stable request fingerprints, account locks/versions and unique active payment links. Deleted/edited source payments do not silently rewrite savings history.
+- Reuse RecurrenceDates and ForecastService. Intended allocations never auto-post/catch up or create plans/expenses. Only explicitly linked existing cash flows affect bank projections, once. A whole cash-flow reference cannot fund two schedule forecasts. Keep conditional estimates/observed-rate insufficiency/target assumptions explicit.
+- Assistant savings operations remain allowlisted and read-only; savings notes must not distort spending/income/anomaly totals. Preserve all-table native backups and savings-aware exact JSON/CSV exports.
+- See [Savings Goals design and verification](docs/savings-goals.md). Phase 6 desktop packaging, model installation, deployment and commits require separate authorization.

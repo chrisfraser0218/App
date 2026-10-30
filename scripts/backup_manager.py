@@ -386,21 +386,24 @@ class Manager:
         self.check_database();self.require_space(self.exports)
         tables=['accounts','transactions','categories','recurring_rules','recurring_occurrences','planned_transactions','forecast_preferences']
         values={}
+        savings_tables=['savings_goals','savings_entries','savings_corrections','savings_schedules']
         with self.snapshot(self.sources[0]) as snap:
+            savings_available=self.sql(self.sources[0],"SELECT to_regclass('public.savings_goals') IS NOT NULL;",snap)=='t'
+            if savings_available:tables+=savings_tables
             for table in tables:
                 # Owner selected by server, never an input. Decimal JSON values stay strings in exports.
                 text=self.sql(self.sources[0],f"SELECT COALESCE(json_agg(t ORDER BY to_jsonb(t)::text),'[]'::json) FROM (SELECT * FROM {ident(table)} WHERE user_id='{USER_ID}') t;",snap)
                 values[table]=json.loads(text,parse_float=str)
         export_id='export-'+uuid.uuid4().hex;ext='json' if format=='json' else 'zip';path=self.exports/(export_id+'.'+ext)
-        if format=='json':write_json(path,{'formatVersion':1,'createdAt':self.stamp(),'decimalEncoding':'strings','savingsDataAvailable':False,'data':values,'notice':'Data export is not a full PostgreSQL backup.'})
+        if format=='json':write_json(path,{'formatVersion':1,'createdAt':self.stamp(),'decimalEncoding':'strings','savingsDataAvailable':savings_available,'data':values,'notice':'Data export is not a full PostgreSQL backup.'})
         else:
             with zipfile.ZipFile(path,'x',compression=zipfile.ZIP_DEFLATED) as archive:
                 for table,rows in values.items():
                     fields=list(rows[0]) if rows else ['no_records'];out=io.StringIO(newline='');writer=csv.DictWriter(out,fieldnames=fields);writer.writeheader()
                     for row in rows:
-                        safe={k:("'"+v if k in ['description','name','display_name'] and isinstance(v,str) and v.startswith(('=','+','-','@','\t','\r')) else v) for k,v in row.items()};writer.writerow(safe)
+                        safe={k:("'"+v if k in ['description','name','display_name','note','reason'] and isinstance(v,str) and v.startswith(('=','+','-','@','\t','\r')) else v) for k,v in row.items()};writer.writerow(safe)
                     archive.writestr(table+'.csv',out.getvalue())
-                archive.writestr('README.txt','CSV exports are not PostgreSQL backups. Monetary decimals are exact. Spreadsheet formula-like text is prefixed with an apostrophe. Savings data is not implemented.\n')
+                archive.writestr('README.txt','CSV exports are not PostgreSQL backups. Monetary decimals are exact. Spreadsheet formula-like text is prefixed with an apostrophe. Savings allocations, when present, are separate from cash transactions.\n')
             path.chmod(0o600)
         result={'exportId':export_id+'.'+ext,'bytes':path.stat().st_size,'format':format}
         self.add_history({'id':result['exportId'],'createdAt':self.stamp(),'reason':'export','verification':'export_prepared',**result})

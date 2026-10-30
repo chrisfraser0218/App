@@ -7,7 +7,7 @@ import java.util.*;
 
 final class AssistantModels {
     private AssistantModels() {}
-    enum Intent { SPENDING, LARGEST, COMPARISON, RECURRING_EXPENSES, UNUSUAL, INCOME, MONTHLY_INCOME, RECURRING_INCOME, PAYCHECK, BALANCE, FORECAST, LOWEST, WARNINGS, SCENARIO, BILLS, NEXT_PAYMENT }
+    enum Intent { SAVINGS, SPENDING, LARGEST, COMPARISON, RECURRING_EXPENSES, UNUSUAL, INCOME, MONTHLY_INCOME, RECURRING_INCOME, PAYCHECK, BALANCE, FORECAST, LOWEST, WARNINGS, SCENARIO, BILLS, NEXT_PAYMENT }
     record Context(@NotNull Intent intent, UUID categoryId, @NotNull LocalDate from, @NotNull LocalDate to) {}
     record Question(@NotBlank @Size(max=1000) String question, @Valid Context context) {}
     record Metric(String label,String value) {}

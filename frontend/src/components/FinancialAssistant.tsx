@@ -14,6 +14,8 @@ interface Exchange {
   error?: string;
 }
 const kinds: Record<string, string> = {
+  ACTUAL_ALLOCATION: "Recorded savings allocation",
+  ALLOCATION_ESTIMATE: "Savings allocation estimate",
   ACTUAL: "Actual recorded data",
   PROJECTED: "Forecast",
   HYPOTHETICAL: "Hypothetical — not saved",
@@ -23,7 +25,8 @@ const kinds: Record<string, string> = {
 };
 function value(label: string, amount: string | null) {
   if (amount === null) return "No baseline";
-  if (label === "Change percent") return amount + "%";
+  if (label === "Change percent" || label.endsWith(" progress percent"))
+    return amount + "%";
   return /^-?\d+\.\d{2}$/.test(amount) ? money(amount) : amount;
 }
 export default function FinancialAssistant() {
@@ -258,6 +261,7 @@ export default function FinancialAssistant() {
                         "#forecast",
                         "#calendar",
                         "#recurring",
+                        "#savings",
                       ].includes(l.href),
                     )
                     .map((l) => (
