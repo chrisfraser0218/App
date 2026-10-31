@@ -6,7 +6,7 @@ Implementation, V7 migration and explicitly approved local Applications installa
 
 - Welcome, Create Account, Log In, confirmation/password validation, authenticated navigation, visible desktop/mobile Log out, and light/dark styling.
 - Local username-only registration, with no email or external service.
-- Empty account initialization and explicit user-owned category creation.
+- Empty financial account initialization, standard owner-specific categories and explicit custom category creation.
 - Session expiration handling, financial-component/context disposal, stale-response protection and explicit retry after a rejected CSRF nonce. Financial writes are never automatically replayed.
 - No production sample-data seeder, shared demo password or unauthenticated demo bypass.
 
@@ -113,3 +113,56 @@ The same approved backup LaunchAgent, schedule, paths, worker, retention and res
 - No Docker, cloud service, paid dependency/API/subscription, optional LLM/runtime installation, Phase 7 work, remote deployment or Git commit was introduced.
 
 See [account architecture and operation](account-authentication.md) for contracts, security limits and reproduction instructions.
+
+
+## October 31, 2026 — category and CI regression fixes
+
+This update supersedes the earlier category-empty registration behavior described in the historical acceptance record above. Financial history still starts empty.
+
+The empty dropdown was caused by registration inserting only a user/account while categories remained owner-scoped. New accounts had no category rows. AI inference is independent of account history, but its response mapping required fixed legacy category names belonging to the current owner; absent categories caused valid suggestions to become unavailable. No authentication/CSRF relaxation, private-history training, Python model replacement or external service was needed.
+
+Registration now inserts 20 public standard labels in the same transaction. Successful login safely backfills missing defaults for nonlegacy users, serialized by a user row lock. Existing names/IDs/settings/custom categories survive; case-insensitive same-type matches suppress duplicates. Legacy categories remain untouched. A deleted/renamed default can be re-added under its original name on later login. AI mapping supports the new labels and preserves existing legacy-name preference, using only the current owner's expense categories. Existing bounded unavailable/uncertain handling and manual override remain intact.
+
+The CI failure came from a Mac-specific `55434` assertion in `LeastPrivilegeAuthenticationTest`. The workflow intentionally supplies a separate ephemeral PostgreSQL service at `5432`; Spring environment properties override test-profile H2 defaults. The test now captures its actual configured connection's public transport metadata before switching roles and verifies that metadata remains readable with the restricted role, while `data_directory` remains forbidden. The pre-startup isolation guard, permissions, local port `55432`, test port `55434`, H2 profile and workflow configuration remain unchanged.
+
+No Flyway migration was added or applied; V1–V7 remain unchanged. No personal financial fixtures or categories are seeded by verification. No commits, pushes, external deployment, runtime/model installation, PostgreSQL management or LaunchAgent changes are included.
+
+Executed automated verification:
+
+| Suite | Passed | Failed/errors | Skipped |
+| --- | ---: | ---: | ---: |
+| Backend PostgreSQL (full suite) | 276 | 0 | 0 |
+| Backend H2 (full suite) | 275 | 0 | 1 PostgreSQL-only role test |
+| PostgreSQL least-privilege test independently | 1 | 0 | 0 |
+| React | 139 | 0 | 0 |
+| Python AI | 45 | 0 | 0 |
+| Backup worker including native isolated restore tests | 37 | 0 | 0 |
+| Desktop supervisor | 10 | 0 | 0 |
+
+Frontend production build and backend Maven verify passed. Python emitted one existing Starlette/httpx deprecation warning. Initial verification attempts encountered an incomplete default Maven cache, a missing cached clean plugin, an overlapping Maven output-directory compile, and a regression-test fixture that observed writes inside its enclosing rollback transaction; these were corrected by using the complete existing offline cache, sequential builds and early ownership rejection in the fixture. Final suite results above come from successful complete reruns. No failing test was skipped to obtain these results.
+
+GitHub Actions has not been triggered or observed passing during this task; remote CI verification remains pending. A real 30-minute session wait, Wi-Fi-disabled operation and an editor/Terminal-closed session are not inferred from automated checks.
+
+
+Desktop result: the fixed 0.6.1 bundle was rebuilt from existing runtimes, passed bundled Python/Java/PostgreSQL smoke checks and deep/strict signing verification, and was installed in `/Applications/FinSight AI.app` with the existing installer. The prior app was retained. Automatic approval initially rejected installation; the owner then directly approved the local app update in chat, and installation completed. No backup-agent update option was used.
+
+The installed app passed real WKWebView synthetic registration with all 20 default categories and no financial history. Without adding legacy category fixtures, the transaction form displayed a real bundled-model suggestion; accepting it and manually overriding to Groceries saved exactly 8.75 and the correct negative balance. Subsequent native transaction create/edit/delete, recurring catch-up/idempotency, forecasts, calendar, insights, assistant, savings, backup/archive/full isolated restoration, simulated external copy and native folder/export dialogs passed. Two-account access checks, logout/login and quit/reopen/login preserved synthetic records and isolated ownership. Zero renderer errors were reported. The native app was launched directly through macOS; VS Code remained open, so editor-closed acceptance is still pending.
+
+Private pre/post fingerprints matched every existing database on the personal PostgreSQL cluster, including protected restore copies, with unchanged table rows/counts/exact balances. PostgreSQL configuration and the existing backup LaunchAgent checksum matched; the original stopped cluster remained stopped. Personal accounts were not used as test fixtures or logged into during acceptance. Missing personal defaults will be initialized on the owner's next successful login. No schema migration or personal financial write was performed by this update's verification.
+
+Files changed:
+
+- `README.md`
+- `backend/src/main/java/com/finsight/AuthenticationService.java`
+- `backend/src/main/java/com/finsight/DefaultCategories.java`
+- `backend/src/main/java/com/finsight/CategoryPredictionService.java`
+- `backend/src/test/java/com/finsight/AuthenticationApiTest.java`
+- `backend/src/test/java/com/finsight/LeastPrivilegeAuthenticationTest.java`
+- `desktop/tests/authentication_acceptance.py`
+- `desktop/tests/financial_workflows.py`
+- `docs/account-authentication.md`
+- `docs/local-operation.md`
+- `docs/phase6b-completion-report.md`
+- `docs/macos-packaging.md`
+
+Remaining acceptance: remote GitHub Actions, deliberate Wi-Fi-disabled/editor-closed operation, physical external SSD behavior and a real idle-expiry wait. PostgreSQL startup management remains approval-restricted. Phase 7 has not begun. Final `git diff --check` passed.

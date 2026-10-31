@@ -20,7 +20,7 @@ def workflows(client):
  c.api('/transactions/'+transaction['id'],'PUT',{'description':marker,'amount':'13.34','type':'EXPENSE','categoryId':cat('Groceries'),'date':today})
  assert amount(c.api('/account'))==amount(before)-Decimal('13.34')
  c.api('/transactions/'+transaction['id'],'DELETE');assert c.api('/account')==before
- prediction=c.api('/category-predictions','POST',{'description':'Starbucks Coffee','amount':'8.75'});assert prediction['status']=='suggested' and prediction['categoryName']=='Dining' and 0<float(prediction['confidence'])<=1
+ prediction=c.api('/category-predictions','POST',{'description':'Starbucks Coffee','amount':'8.75'});assert prediction['status']=='suggested' and prediction['categoryName']==('Dining' if any(x['name']=='Dining' for x in categories) else 'Restaurants') and 0<float(prediction['confidence'])<=1
  start=(datetime.date.fromisoformat(today)-datetime.timedelta(days=2)).isoformat()
  recurring=c.api('/recurring-transactions','POST',{'description':marker+' daily','amount':'5.00','type':'EXPENSE','categoryId':cat('Groceries'),'frequency':'DAILY','paymentDay':None,'secondPaymentDay':None,'startDate':start,'endDate':None,'enabled':True,'requestId':str(uuid.uuid4()),'backfillConfirmed':True,'predictionId':None})
  account_after=c.api('/account');assert amount(account_after)==amount(before)-Decimal('15.00')

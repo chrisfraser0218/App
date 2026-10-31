@@ -11,10 +11,11 @@ import static com.finsight.AiModels.*;
 
 @Service
 class CategoryPredictionService {
-    private static final Map<String, String> CATEGORY_NAMES = Map.of(
-        "Food & Drinks", "Dining", "Transportation", "Transport", "Entertainment", "Subscriptions",
-        "Groceries", "Groceries", "Shopping", "Shopping", "Utilities", "Utilities",
-        "Housing", "Housing", "Health", "Health", "Other", "Other");
+    private static final Map<String, List<String>> CATEGORY_NAMES = Map.of(
+        "Food & Drinks", List.of("Dining", "Restaurants"), "Transportation", List.of("Transport", "Transportation"),
+        "Entertainment", List.of("Subscriptions", "Entertainment"), "Groceries", List.of("Groceries"),
+        "Shopping", List.of("Shopping"), "Utilities", List.of("Utilities"),
+        "Housing", List.of("Housing", "Rent"), "Health", List.of("Health", "Healthcare"), "Other", List.of("Other"));
     private final AiServiceClient client;
     private final CategoryRepository categories;
     private final JdbcTemplate jdbc;
@@ -32,10 +33,11 @@ class CategoryPredictionService {
         ModelPrediction prediction = optional.get();
         Category category = null;
         if (prediction.status().equals("suggested")) {
-            String name = CATEGORY_NAMES.get(prediction.category());
-            if (name == null) return PredictionView.unavailable();
-            category = categories.findByUserIdOrderByName(CurrentIdentity.userId()).stream()
-                .filter(c -> c.type == TransactionType.EXPENSE && c.name.equals(name)).findFirst().orElse(null);
+            List<String> names = CATEGORY_NAMES.get(prediction.category());
+            if (names == null) return PredictionView.unavailable();
+            var owned = categories.findByUserIdOrderByName(CurrentIdentity.userId());
+            category = names.stream().flatMap(name -> owned.stream()
+                .filter(c -> c.type == TransactionType.EXPENSE && c.name.equalsIgnoreCase(name))).findFirst().orElse(null);
             if (category == null) return PredictionView.unavailable();
         }
         UUID id = UUID.randomUUID();

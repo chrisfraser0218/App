@@ -10,9 +10,11 @@ The unauthenticated application shows **Welcome to FinSight AI**, **Create Accou
 
 Registration requires a unique username, password and confirmation. Usernames are case-insensitive ASCII letters/digits/underscores, 3–32 characters, starting with a letter; the stored username is lowercase. Passwords require at least 12 Unicode code points and allow up to 1024 UTF-16 code units. Pasting and password managers are supported. No email is required.
 
-One database transaction creates the user and one USD account with an exact `0.00` starting balance. It creates **no categories, transactions, income/expense history, recurring schedules/receipts, plans, forecast preferences, goals, savings entries, predictions or feedback**. Assistant history is never persisted. Nothing is copied from the legacy account. If registration fails, the account transaction rolls back.
+One database transaction creates the user and one USD account with an exact `0.00` starting balance. It also creates 14 standard expense categories and six standard income categories, owned by the new user. It creates **no transactions, income/expense history, recurring schedules/receipts, plans, forecast preferences, goals, savings entries, predictions or feedback**. Assistant history is never persisted. Nothing is copied from the legacy account. If registration fails, the account transaction rolls back.
 
-Categories are user-owned financial metadata, not global system records. Choose **Add a category** on the dashboard to explicitly create income/expense categories before entering transactions. Names resembling model categories may support existing optional suggestions; suggestions never create categories or override manual choices. Production builds no longer contain the demo seeder. The old seeder is retained only in guarded synthetic test sources.
+Categories are user-owned metadata. Standard expenses are Groceries, Rent, Utilities, Transportation, Restaurants, Shopping, Entertainment, Healthcare, Insurance, Subscriptions, Education, Travel, Personal Care and Other. Standard income categories are Salary, Bonus, Freelance, Interest, Refund and Other Income. Choose **Add a category** on the dashboard for custom categories. Successful login fills missing defaults for existing personal accounts under a user-row lock in the authentication transaction. Matching names are compared case-insensitively by type; existing IDs, spelling and settings are retained. Repeated logins do not duplicate defaults. Deleting or renaming a default permits its original name to be added again on a later login. The preserved legacy user is explicitly excluded; no legacy categories are copied or changed. No schema migration is required.
+
+The existing synthetic-trained local model works without account history. Owner-scoped mapping supports Restaurants/Rent/Healthcare/Transportation as well as legacy Dining/Housing/Health/Transport names, with legacy mappings retained when present. Suggestions never create categories or override manual choices. Production builds no longer contain the demo seeder. The old seeder is retained only in guarded synthetic test sources.
 
 ## Legacy/demo login: deliberate one-time setup
 
@@ -103,8 +105,8 @@ The maintenance Java source launcher is a development/upgrade action using the a
 
 Use **synthetic data only** for acceptance/screenshots:
 
-1. Register a new username; verify $0.00, empty categories/transactions/schedules/plans/goals/history, and no stored preferences or feedback.
-2. Explicitly create income/expense categories, then record income and an expense. Check exact balance and owned source IDs.
+1. Register a new username; verify $0.00, 20 owned default categories, empty transactions/schedules/plans/goals/history, and no stored preferences or feedback.
+2. Use the default categories and explicitly create a custom category. Enter an expense description and amount, review/accept or override the local AI suggestion, then record income and an expense. Check exact balance and owned source IDs.
 3. Log out; verify financial content disappears. Log back in and verify record persistence. Test expired sessions and CSRF rejection without replaying writes.
 4. Register a different synthetic user; verify no first-user records, categories, schedules, preferences, goals, insight evidence, assistant evidence or exports are accessible, including manipulated foreign-ID requests.
 5. Return to the first synthetic account and verify its data is unchanged. Use private fingerprint verification for real legacy preservation, not screenshots or test writes.
@@ -114,3 +116,10 @@ Use **synthetic data only** for acceptance/screenshots:
 Source tests cover the authenticated boundary without a production bypass. `desktop/tests/authentication_acceptance.py` accepts only the existing private synthetic native profile and exercises actual WKWebView, financial workflows, backup/restore and native dialogs. Broad frontend/backend/AI/worker checks and real OS acceptance are reported separately in the Phase 6B completion record.
 
 Same-user malware, an administrator or a compromised OS can access local storage/processes; app login is not protection from a compromised Mac. Session memory is deliberately lost on service restart. There is no password-recovery UI, email verification, remote account system, encrypted app backup, cloud updater or Phase 7 implementation. Wi-Fi-disabled, closed-IDE and physical external-SSD acceptance must be reported only when actually executed.
+
+
+## Portable backend test configuration
+
+`application-test.yml` defaults to H2 in-memory PostgreSQL mode. Run `mvn verify` for that suite; the native PostgreSQL role test is intentionally skipped on H2. For native tests, supply `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` and `SPRING_DATASOURCE_PASSWORD` from private synthetic configuration and run `mvn test`. The Mac fixture remains `finsight_verification` on loopback port 55434 in the already-existing isolated cluster. Never supply personal database credentials or bypass `IsolatedDatabaseGuard`.
+
+The source-only GitHub workflow supplies its ephemeral `finsight_verification` service on port 5432 using environment variables, which override the H2 test profile. Its role test must verify public connection metadata under the restricted role without assuming a Mac-specific port or reading privileged `data_directory`. Database identity/isolation checks still run before application startup. The personal PostgreSQL port 55432 is unchanged. GitHub Actions results must be verified separately; local success does not establish a remote CI pass.

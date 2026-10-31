@@ -19,6 +19,12 @@ class LeastPrivilegeAuthenticationTest {
     @Test void registrationAndLoginWorkWithoutGlobalSettingsPrivileges()throws Exception {
         try(var c=dataSource.getConnection()) {
             assumeTrue(c.getMetaData().getDatabaseProductName().equals("PostgreSQL"),"Native PostgreSQL role semantics only");
+            // Capture transport metadata before SET ROLE; restricted roles cannot read global settings.
+            int configuredPort;
+            String configuredHost;
+            try (var s=c.createStatement(); var r=s.executeQuery("SELECT inet_server_port(), host(inet_server_addr())")) {
+                r.next(); configuredPort=r.getInt(1); configuredHost=r.getString(2);
+            }
             String suffix=UUID.randomUUID().toString().replace("-","");
             String schema="auth_role_"+suffix,role="finsight_auth_"+suffix;
             var source=new SingleConnectionDataSource(c,true);
@@ -30,8 +36,8 @@ class LeastPrivilegeAuthenticationTest {
                 s.execute("SET ROLE "+role);c.setSchema(schema);
                 var jdbc=new JdbcTemplate(source);
                 assertThatThrownBy(()->jdbc.queryForObject("SELECT current_setting('data_directory')",String.class)).isInstanceOf(org.springframework.dao.DataAccessException.class);
-                assertThat(jdbc.queryForObject("SELECT inet_server_port()",Integer.class)).isEqualTo(55434);
-                assertThat(jdbc.queryForObject("SELECT host(inet_server_addr())",String.class)).isEqualTo("127.0.0.1");
+                assertThat(jdbc.queryForObject("SELECT inet_server_port()",Integer.class)).isEqualTo(configuredPort);
+                assertThat(jdbc.queryForObject("SELECT host(inet_server_addr())",String.class)).isEqualTo(configuredHost);
                 var authentication=new AuthenticationService(jdbc);
                 String name="synthetic_owner",password="Synthetic least privilege password";
                 var owner=authentication.register(name,password,password);

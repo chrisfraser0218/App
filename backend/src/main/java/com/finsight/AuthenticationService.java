@@ -31,8 +31,10 @@ class AuthenticationService {
             jdbc.update("INSERT INTO users(id,display_name,username,password_hash,credential_version) VALUES (?,?,?,?,1)", user, raw, name, hash);
         } catch (DuplicateKeyException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, "That username is unavailable"); }
         jdbc.update("INSERT INTO accounts(id,user_id,name,currency,starting_balance) VALUES (?,?,?,'USD',0.00)", account, user, "Personal account");
+        DefaultCategories.initialize(jdbc, user);
         return new CurrentIdentity.Owner(user, account, name, 1, Instant.now());
     }
+    @Transactional
     CurrentIdentity.Owner login(String raw, String password) {
         // Invalid and absent names run the same expensive password verification.
         String name = raw == null ? "" : raw.toLowerCase(Locale.ROOT);
@@ -42,6 +44,7 @@ class AuthenticationService {
         String hash = row == null || row.get("password_hash") == null ? dummy : (String) row.get("password_hash");
         boolean valid = LocalPasswords.matches(password, hash);
         if (!valid || row == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+        DefaultCategories.initialize(jdbc, (UUID)row.get("id"));
         return new CurrentIdentity.Owner((UUID)row.get("id"), (UUID)row.get("account_id"), name,
             ((Number)row.get("credential_version")).longValue(), Instant.now());
     }

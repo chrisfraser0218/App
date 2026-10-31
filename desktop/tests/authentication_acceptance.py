@@ -31,12 +31,31 @@ def main():
     username='native_'+uuid.uuid4().hex[:12];password='Synthetic native password 6B'
     sign_in(c,username,password,register=True)
     account=c.api('/account');assert str(account['balance']) in ('0','0.0','0.00') and str(account['startingBalance']) in ('0','0.0','0.00')
-    for route in ['/transactions','/categories','/recurring-transactions','/planned-transactions']:assert c.api(route)==[]
+    for route in ['/transactions','/recurring-transactions','/planned-transactions']:assert c.api(route)==[]
     assert c.api('/savings-goals')['goals']==[]
-    # Deliberate synthetic fixture setup, through the normal owned API; never production registration defaults.
-    for name in ['Salary','Freelance','Housing','Groceries','Dining','Transport','Shopping','Subscriptions','Health','Other','Utilities']:
-        c.api('/categories','POST',{'name':name,'type':'INCOME' if name in ['Salary','Freelance'] else 'EXPENSE'})
+    assert len(c.api('/categories'))==20
     c.navigate('transactions','Transactions');c.command('reload');time.sleep(.5);wait_title(c,'Transactions')
+    # Exercise the unseeded account through the actual transaction form and bundled model.
+    c.command('click','Add transaction')
+    for label,value in [('Description','Starbucks Coffee'),('Amount (USD)','8.75')]:
+        c.command('fill',json.dumps({'label':label,'value':value}))
+    deadline=time.monotonic()+20
+    while time.monotonic()<deadline:
+        if 'Use suggestion' in c.command('snapshot').get('text',''):break
+        time.sleep(.2)
+    else:raise RuntimeError('Default-category AI suggestion did not appear in native UI')
+    c.command('click','Use suggestion')
+    groceries=next(category['id'] for category in c.api('/categories') if category['name']=='Groceries')
+    c.command('fill',json.dumps({'label':'Category','value':groceries}))
+    c.command('click','Add transaction')
+    deadline=time.monotonic()+15
+    while time.monotonic()<deadline:
+        saved=c.api('/transactions')
+        if saved:break
+        time.sleep(.2)
+    assert len(saved)==1 and saved[0]['categoryId']==groceries
+    assert str(c.api('/account')['balance'])=='-8.75'
+    c.api('/transactions/'+saved[0]['id'],'DELETE')
     result=workflows(c);result.pop('synthetic_account',None)
     before=c.api('/account');records=c.api('/transactions');goals=c.api('/savings-goals')
     c.command('click','Log out');wait_title(c,'Welcome to FinSight AI')

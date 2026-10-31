@@ -2,7 +2,7 @@
 
 ## Phase 6B local authentication
 
-FinSight now opens with **Create Account / Log In**. Registration creates a separate, empty USD account at **$0.00**, with no copied demo categories or financial history. Add categories explicitly from the dashboard. Financial APIs require local authenticated sessions; passwords use Argon2id. The preserved legacy/demo book retains every existing record and requires deliberate local credential setup with `python3 scripts/configure-legacy-login.py` before its first authenticated login. No shared demo password is supplied.
+FinSight now opens with **Create Account / Log In**. Registration creates a separate, empty USD account at **$0.00**, with no copied demo categories or financial history. Twenty owner-specific standard income/expense categories are available immediately; add custom categories from the dashboard. Existing personal logins receive missing defaults on successful login. Financial APIs require local authenticated sessions; passwords use Argon2id. The preserved legacy/demo book retains every existing record and requires deliberate local credential setup with `python3 scripts/configure-legacy-login.py` before its first authenticated login. No shared demo password is supplied.
 
 See the [Phase 6B completion report](docs/phase6b-completion-report.md) and [account authentication, migration and local credential setup](docs/account-authentication.md) for session/CSRF behavior, desktop integration, backup/export ownership and security limits. Older historical demo instructions below do not authorize unauthenticated access or production reseeding.
 

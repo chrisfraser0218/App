@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(initializers=IsolatedDatabaseGuard.class) @Transactional
 class AuthenticationApiTest {
     @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired JdbcTemplate jdbc;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean AiServiceClient ai;
     static final String PASSWORD="Synthetic local test password";
     String name(){return "u"+UUID.randomUUID().toString().replace("-","").substring(0,20);}
     class Client {
@@ -42,14 +43,46 @@ class AuthenticationApiTest {
         UUID owner(){return jdbc.queryForObject("SELECT id FROM users WHERE username=?",UUID.class,username);}
         String category(String type)throws Exception {return body(mutate("POST","/api/categories",Map.of("name",type+" own","type",type)).andExpect(status().isCreated())).path("id").asText();}
     }
-    @Test void registrationCreatesOnlyAnEmptyZeroBalanceAccount()throws Exception {
+    @Test void registrationCreatesDefaultCategoriesAndAnEmptyZeroBalanceAccount()throws Exception {
         var c=new Client().register();
         c.get("/api/auth/me").andExpect(jsonPath("$.username").value(c.username));
         c.get("/api/account").andExpect(jsonPath("$.startingBalance").value(0)).andExpect(jsonPath("$.balance").value(0));
-        for(String route:List.of("transactions","categories","recurring-transactions","planned-transactions"))c.get("/api/"+route).andExpect(status().isOk()).andExpect(content().json("[]"));
-        for(String table:List.of("transactions","categories","recurring_rules","recurring_occurrences","planned_transactions","forecast_preferences","category_predictions","category_prediction_feedback","recurring_prediction_feedback","savings_goals","savings_entries","savings_schedules","savings_corrections"))
+        for(String route:List.of("transactions","recurring-transactions","planned-transactions"))c.get("/api/"+route).andExpect(status().isOk()).andExpect(content().json("[]"));
+        for(String table:List.of("transactions","recurring_rules","recurring_occurrences","planned_transactions","forecast_preferences","category_predictions","category_prediction_feedback","recurring_prediction_feedback","savings_goals","savings_entries","savings_schedules","savings_corrections"))
             assertThat(jdbc.queryForObject("SELECT count(*) FROM "+table+" WHERE user_id=?",Integer.class,c.owner())).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM accounts WHERE user_id=?",Integer.class,c.owner())).isOne();
+        c.get("/api/categories").andExpect(jsonPath("$.length()").value(20));
+    }
+    @Test void loginBackfillsMissingDefaultsWithoutChangingCustomOrLegacyCategories()throws Exception {
+        var c=new Client().register();
+        var legacy=jdbc.queryForList("SELECT * FROM categories WHERE user_id=? ORDER BY id",DemoIdentity.USER_ID);
+        c.category("EXPENSE");
+        jdbc.update("DELETE FROM categories WHERE user_id=? AND name='Groceries'",c.owner());
+        jdbc.update("UPDATE categories SET name='restaurants' WHERE user_id=? AND name='Restaurants'",c.owner());
+        var retained=jdbc.queryForList("SELECT * FROM categories WHERE user_id=? ORDER BY id",c.owner());
+        for(int i=0;i<2;i++) {
+            c.mutate("POST","/api/auth/logout",Map.of()).andExpect(status().isNoContent());
+            c.session=new MockHttpSession();
+            c.mutate("POST","/api/auth/login",Map.of("username",c.username,"password",PASSWORD)).andExpect(status().isOk());
+            c.get("/api/categories").andExpect(jsonPath("$.length()").value(21));
+        }
+        assertThat(jdbc.queryForList("SELECT * FROM categories WHERE user_id=? ORDER BY id",c.owner())).containsAll(retained);
+        assertThat(jdbc.queryForList("SELECT * FROM categories WHERE user_id=? ORDER BY id",DemoIdentity.USER_ID)).isEqualTo(legacy);
+    }
+    @Test void newOwnersReceiveOwnedAiSuggestionsWithoutHistoryAndCanOverride()throws Exception {
+        var a=new Client().register(); var b=new Client().register();
+        for (var mapping : Map.of("Food & Drinks","Restaurants","Housing","Rent","Health","Healthcare","Transportation","Transportation").entrySet()) {
+            org.mockito.Mockito.when(ai.predict(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.of(
+                new AiModels.ModelPrediction(mapping.getKey(),0.9,"1.0","suggested")));
+            var prediction=a.body(a.mutate("POST","/api/category-predictions",Map.of("description","Synthetic expense","amount","12.34")).andExpect(status().isOk()));
+            assertThat(prediction.path("categoryName").asText()).isEqualTo(mapping.getValue());
+            assertThat(jdbc.queryForObject("SELECT user_id FROM categories WHERE id=?",UUID.class,UUID.fromString(prediction.path("categoryId").asText()))).isEqualTo(a.owner());
+            b.mutate("POST","/api/transactions",Map.of("description","Synthetic expense","amount","12.34","type","EXPENSE","categoryId",prediction.path("categoryId").asText(),"date",LocalDate.now().toString(),"predictionId",prediction.path("predictionId").asText())).andExpect(status().isBadRequest());
+        }
+        var prediction=a.body(a.mutate("POST","/api/category-predictions",Map.of("description","Synthetic expense","amount","12.34")).andExpect(status().isOk()));
+        a.mutate("POST","/api/transactions",Map.of("description","Synthetic expense","amount","12.34","type","EXPENSE","categoryId",a.category("EXPENSE"),"date",LocalDate.now().toString(),"predictionId",prediction.path("predictionId").asText())).andExpect(status().isCreated());
+        a.get("/api/account").andExpect(jsonPath("$.balance").value(-12.34));
+        b.get("/api/account").andExpect(jsonPath("$.balance").value(0));
     }
     @Test void usernamesAreCaseInsensitiveAndUnique()throws Exception {
         var c=new Client().register();
@@ -152,7 +185,7 @@ class AuthenticationApiTest {
         a.mutate("POST","/api/transactions",Map.of("description","Private synthetic marker","amount","888.88","type","EXPENSE","categoryId",cat,"date",LocalDate.now().toString())).andExpect(status().isCreated());
         String insights=b.body(b.get("/api/insights").andExpect(status().isOk())).toString();assertThat(insights).doesNotContain("Private synthetic marker",cat,"888.88");
         String answer=b.body(b.mutate("POST","/api/assistant/questions",Map.of("question","How much did I spend this month?")).andExpect(status().isOk())).toString();assertThat(answer).doesNotContain("Private synthetic marker",cat,"888.88");
-        b.get("/api/categories").andExpect(content().json("[]"));
+        assertThat(b.body(b.get("/api/categories")).toString()).doesNotContain(cat, "EXPENSE own");
     }
     @Test void legacyFinancialRowsAreUnchangedByRegistration()throws Exception {
         var rows=jdbc.queryForList("SELECT * FROM transactions WHERE user_id=? ORDER BY id",DemoIdentity.USER_ID);
